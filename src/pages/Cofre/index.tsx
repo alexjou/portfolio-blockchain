@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import Scene3D from '../../components/Scene3D';
 import DarkCard from '../../components/DarkCard';
 import { NumericFormat } from 'react-number-format';
 import { ethers } from 'ethers';
+import { getInternalTxs } from '../../services/etherscanService';
 import { useNotification } from '../../context/NotificationContext';
-// @ts-ignore
-const ETHERSCAN_API_KEY = import.meta.env.VITE_ETHERSCAN_API_KEY;
+import InteractionScene3D from '../../components/InteractionScene3D';
 
 // Endereço do contrato Cliente (deve ser ajustado conforme o deploy)
 const cofreEndereco = '0x10f965B5c5ab96d9d49d1c71D7D64844A3Db3533';
@@ -69,18 +68,8 @@ const Cofre: React.FC = () => {
   const buscarTransacoesInternas = async (endereco: string) => {
     setLoadingTransacoes(true);
     try {
-      let url = `https://api-sepolia.etherscan.io/api?module=account&action=txlistinternal&address=${endereco}&startblock=0&endblock=99999999&sort=desc`;
-      if (ETHERSCAN_API_KEY) {
-        url += `&apikey=${ETHERSCAN_API_KEY}`;
-      }
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.status !== "1" || !data.result) {
-        setTransacoesCofre([]);
-        setLoadingTransacoes(false);
-        return;
-      }
-      setTransacoesCofre(data.result);
+      const result = await getInternalTxs(endereco);
+      setTransacoesCofre(result);
       setLoadingTransacoes(false);
     } catch (error) {
       setTransacoesCofre([]);
@@ -88,13 +77,11 @@ const Cofre: React.FC = () => {
     }
   };
 
+  // Busca transações internas apenas quando conectado ou tipoTransacao muda
   useEffect(() => {
     if (!connected) return;
-    if (tipoTransacao === 'cofre') {
-      buscarTransacoesInternas(cofreEndereco);
-    } else {
-      buscarTransacoesInternas(clienteAddress);
-    }
+    buscarTransacoesInternas(tipoTransacao === 'cofre' ? cofreEndereco : clienteAddress);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, tipoTransacao]);
 
   useEffect(() => {
@@ -228,14 +215,14 @@ const Cofre: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-blue-950 to-purple-950 text-white flex flex-col">
+      <div className="flex justify-center m-8">
+        <InteractionScene3D />
+      </div>
       <main className="flex-1 flex items-center justify-center py-5 px-2">
         <DarkCard className="max-w-4xl w-full mx-auto">
           <h1 className="text-center mb-2 text-4xl font-bold text-white">🔐 Cofre</h1>
           <p className="text-center mb-8 italic text-gray-200">Gerencie o saldo do Cliente no Cofre (interação entre contratos)</p>
           {/* Adiciona Scene3D logo abaixo da mensagem de introdução */}
-          <div className="flex justify-center mb-8">
-            <Scene3D />
-          </div>
           <div className="contract-info bg-gray-800/80 p-5 rounded-xl mb-8 text-center text-sm break-words text-gray-100">
             <strong className="text-white">Contrato Cliente:</strong><br />
             <a

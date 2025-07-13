@@ -4,6 +4,8 @@ import { Environment, Float, Text, Html, Line, OrbitControls, Edges } from '@rea
 import { Vector3, Mesh } from 'three';
 import { AnimatedParticles, DataFlow } from './AnimatedParticles';
 import metamaskImg from '../assets/Metamask.png';
+import { useEffect, useState } from 'react';
+import { getUniqueSenders } from '../services/etherscanService';
 
 function FloatingText({ position, text, fontSize = 0.2, color = "white" }: { position: Vector3; text: string; fontSize?: number; color?: string }) {
   return (
@@ -104,7 +106,34 @@ function Connection({ start, end, color, width = 1 }: {
   );
 }
 
-export default function Scene3D() {
+export default function InteractionScene3D() {
+  // Endereço do Cofre
+  const cofreAddress = "0x10f965B5c5ab96d9d49d1c71D7D64844A3Db3533";
+  // Endereço do contratoCliente do usuário
+  const contratoCliente = "0x13cD34Ce931da65db0B61544D77A6aEc9BA90fAD";
+  // Estado para clientes que interagiram
+  const [clientes, setClientes] = useState<string[]>([]);
+
+  // Buscar clientes que interagiram com o Cofre
+  useEffect(() => {
+    async function fetchClientes() {
+      try {
+        const uniqueSenders = await getUniqueSenders(cofreAddress, contratoCliente);
+        // Remove o endereço do Cofre e duplicados
+        const filtered = Array.from(new Set(uniqueSenders))
+          .filter(addr => addr && addr.toLowerCase() !== cofreAddress.toLowerCase());
+        // Se o contratoCliente estiver na lista, exibe só ele, senão exibe todos os outros
+        if (filtered.includes(contratoCliente)) {
+          setClientes([contratoCliente]);
+        } else {
+          setClientes(filtered);
+        }
+      } catch {
+        setClientes([]);
+      }
+    }
+    fetchClientes();
+  }, []);
   return (
     <div className="w-full h-full flex justify-center items-center">
       <div className="max-w-full w-full md:w-[900px] lg:w-[1000px] h-[60vw] max-h-[80vh] min-h-[350px] z-10 rounded-lg overflow-hidden bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-purple-900 via-slate-900 to-indigo-950">
@@ -232,19 +261,24 @@ export default function Scene3D() {
                 </div>
               </Html>
             </group>
-            {[
-              { color: '#008800', label: 'Cliente', address: '0x13cD34Ce931da65db0B61544D77A6aEc9BA90fAD' },
-              { color: '#cccccc', label: '', address: undefined },
-              { color: '#dd7744', label: 'Cofre', address: '0x10f965B5c5ab96d9d49d1c71D7D64844A3Db3533' },
-              { color: '#cccccc', label: '', address: undefined },
-              { color: '#008800', label: 'Cliente', address: '0x13cD34Ce931da65db0B61544D77A6aEc9BA90fAD' },
-            ].map((block, i) => (
+            {/* Bloco fixo do Cofre */}
+            {/* Bloco fixo do Cofre */}
+            <ContractBlock
+              position={[-0.5, 0.35, 0]}
+              color="#dd7744"
+              label="Cofre"
+              address={cofreAddress}
+              scale={[1.1, 0.8, 0.13]}
+            />
+
+            {/* Blocos dos clientes que interagiram com o Cofre, distribuídos em eixo X/Z */}
+            {clientes.map((addr, i) => (
               <ContractBlock
-                key={`central-block-z-${i}`}
-                position={[i * 0.5, -i * 0.35, -2 + i * 1]}
-                color={block.color}
-                label={block.label}
-                address={block.address}
+                key={`cliente-block-${addr}`}
+                position={[i * 0.5, -i * 0.35, -1 - i * 1]}
+                color="#008800"
+                label="Cliente"
+                address={addr}
                 scale={[1.1, 0.8, 0.13]}
               />
             ))}
