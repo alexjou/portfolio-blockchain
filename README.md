@@ -1,43 +1,31 @@
 
-# EthKipu Portfolio
+# Portfólio Blockchain ETH-KIPU
 
-Este projeto é o meu portfólio de projetos desenvolvidos com tecnologias blockchain, especialmente Ethereum. Aqui você encontrará exemplos, experimentos e aplicações que demonstram meu aprendizado e experiência com smart contracts, integração Web3, e desenvolvimento de soluções descentralizadas.
+> Bem-vindo ao meu portfólio de projetos desenvolvidos com tecnologias blockchain, especialmente Ethereum! Aqui você encontra exemplos práticos, experimentos e aplicações que demonstram meu aprendizado e experiência com smart contracts, integração Web3 e desenvolvimento de soluções descentralizadas.
+
+## Sobre o Portfólio
+
+Este site reúne meus principais projetos, estudos e provas de conceito relacionados à blockchain. O objetivo é apresentar minha evolução técnica, compartilhar conhecimento e inspirar outros desenvolvedores.
+
+## Projetos em Destaque
+
+- **BlockChain3D**: Visualização interativa em 3D dos conceitos de blockchain e Ethereum. Permite explorar blocos, transações e contratos de forma imersiva.
+- **SeedGuard**: Smart contract para armazenar mensagens de forma segura na blockchain Ethereum. Demonstra conceitos de privacidade e armazenamento descentralizado.
+- **KipuBank**: Banco digital descentralizado, com operações de depósito, saque e consulta de saldo via smart contract.
+- **Cofre**: Gerenciamento de saldo e transações internas entre contratos Ethereum, simulando um cofre digital seguro.
+
+Cada projeto possui uma tela dedicada com explicações, código-fonte e exemplos de uso.
 
 ## Tecnologias Utilizadas
 
-- **React** + **TypeScript** + **Vite** para o frontend
-- **TailwindCSS** para estilização
-- **Solidity** para contratos inteligentes
-- **ESLint** para padronização de código
+- React + TypeScript + Vite
+- TailwindCSS
+- Solidity
+- Ethers.js
+- Metamask
 
-## Objetivo
+## Contato
 
-Reunir e apresentar meus projetos, estudos e provas de conceito relacionados à blockchain, servindo como vitrine técnica e fonte de aprendizado contínuo.
-
----
-
-## Sobre o contrato SeedGuard
-
-O contrato `SeedGuard.sol` (localizado em `src/pages/SeedGuard/SeedGuard.sol`) é um exemplo de smart contract escrito em Solidity para armazenar mensagens de forma segura na blockchain. Ele permite que cada usuário salve uma mensagem associada ao seu endereço e recupere essa mensagem posteriormente. O objetivo é demonstrar conceitos de armazenamento descentralizado e privacidade usando Ethereum.
-
-Principais funções:
-- `guardarMensagem(string mens)`: armazena uma mensagem para o usuário que chamou a função.
-- `lerMensagem()`: retorna a mensagem armazenada pelo usuário.
-
-Esse contrato pode ser expandido para casos de uso como proteção de seeds/mnemonics, cofres digitais, ou provas de conceito de armazenamento seguro.
-
-## Como iniciar o projeto
-
-1. Instale as dependências do frontend:
-   ```powershell
-   npm install
-   ```
-2. Inicie o servidor de desenvolvimento:
-   ```powershell
-   npm run dev
-   ```
-3. Acesse `http://localhost:5173` no navegador para visualizar o portfólio.
-
-Para compilar e testar o contrato SeedGuard, recomenda-se utilizar o [Hardhat](https://hardhat.org/) ou [Foundry](https://book.getfoundry.sh/). Basta copiar o arquivo para um projeto desses e seguir a documentação da ferramenta escolhida.
+Fique à vontade para entrar em contato pelo e-mail: **joubert2006@hotmail.com**
 
 ---
