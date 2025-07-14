@@ -1,5 +1,5 @@
 
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createHashRouter, RouterProvider } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import SeedGuardPage from './pages/SeedGuard';
 import Header from './components/Header';
@@ -29,7 +29,7 @@ import KipuBankPage from './pages/KipuBank';
 import Cofre from './pages/Cofre';
 import BlockChain3D from "./pages/BlockChain3D";
 
-const router = createBrowserRouter([
+const router = createHashRouter([
   {
     path: '/',
     element: (
