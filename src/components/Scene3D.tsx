@@ -1,110 +1,111 @@
+import { Vector3, Mesh } from 'three';
 import { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, Float, Text, Html, Line, OrbitControls, Edges } from '@react-three/drei';
-import { Vector3, Mesh } from 'three';
-import { AnimatedParticles, DataFlow } from './AnimatedParticles';
+
 import metamaskImg from '../assets/Metamask.png';
+import { AnimatedParticles, DataFlow } from './AnimatedParticles';
 
-function FloatingText({ position, text, fontSize = 0.2, color = "white" }: { position: Vector3; text: string; fontSize?: number; color?: string }) {
-  return (
-    <Text
-      position={position}
-      fontSize={fontSize}
-      color={color}
-      maxWidth={2}
-      textAlign="center"
-      anchorX="center"
-      anchorY="middle"
-    >
-      {text}
-    </Text>
-  );
-}
-
-// Componente para um bloco de contrato animado
-function ContractBlock({ position, color, label, address, scale = [1, 1, 0.2] }: {
-  position: [number, number, number];
-  color: string;
-  label: string;
-  address?: string;
-  scale?: [number, number, number];
-}) {
-  const meshRef = useRef<Mesh>(null);
-
-  useFrame(({ clock }) => {
-    if (meshRef.current) {
-      // Efeito de flutuação suave
-      meshRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.3) * 0.03;
-      meshRef.current.rotation.y = Math.sin(clock.getElapsedTime() * 0.2) * 0.03;
-
-      // Leve efeito de pulso no tamanho
-      const pulse = 1 + Math.sin(clock.getElapsedTime() * 1.5) * 0.03;
-      meshRef.current.scale.x = scale[0] * pulse;
-      meshRef.current.scale.y = scale[1] * pulse;
-      meshRef.current.scale.z = scale[2];
-    }
-  });
-
-  return (
-    <group position={position}>
-      <mesh ref={meshRef} scale={scale}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial
-          color={color}
-          metalness={0.5}
-          roughness={0.2}
-          emissive={color}
-          emissiveIntensity={0.2}
-        />
-        <Edges color="#ffffff" threshold={15} scale={1.02} />
-      </mesh>
-
+export default function Scene3D() {
+  function FloatingText({ position, text, fontSize = 0.2, color = "white" }: { position: Vector3; text: string; fontSize?: number; color?: string }) {
+    return (
       <Text
-        position={[0, 0, 0.15]}
-        fontSize={0.18}
-        color="white"
+        position={position}
+        fontSize={fontSize}
+        color={color}
+        maxWidth={2}
+        textAlign="center"
         anchorX="center"
         anchorY="middle"
       >
-        {label}
+        {text}
       </Text>
+    );
+  }
 
-      {address && (
+  // Componente para um bloco de contrato animado
+  function ContractBlock({ position, color, label, address, scale = [1, 1, 0.2] }: {
+    position: [number, number, number];
+    color: string;
+    label: string;
+    address?: string;
+    scale?: [number, number, number];
+  }) {
+    const meshRef = useRef<Mesh>(null);
+
+    useFrame(({ clock }) => {
+      if (meshRef.current) {
+        // Efeito de flutuação suave
+        meshRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.3) * 0.03;
+        meshRef.current.rotation.y = Math.sin(clock.getElapsedTime() * 0.2) * 0.03;
+
+        // Leve efeito de pulso no tamanho
+        const pulse = 1 + Math.sin(clock.getElapsedTime() * 1.5) * 0.03;
+        meshRef.current.scale.x = scale[0] * pulse;
+        meshRef.current.scale.y = scale[1] * pulse;
+        meshRef.current.scale.z = scale[2];
+      }
+    });
+
+    return (
+      <group position={position}>
+        <mesh ref={meshRef} scale={scale}>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial
+            color={color}
+            metalness={0.5}
+            roughness={0.2}
+            emissive={color}
+            emissiveIntensity={0.2}
+          />
+          <Edges color="#ffffff" threshold={15} scale={1.02} />
+        </mesh>
+
         <Text
-          position={[0, -0.35, 0.15]}
-          fontSize={0.13}
-          fontWeight={700}
-          color="#00ff00"
+          position={[0, 0, 0.15]}
+          fontSize={0.18}
+          color="white"
           anchorX="center"
           anchorY="middle"
         >
-          Deployed at {address}
+          {label}
         </Text>
-      )}
-    </group>
-  );
-}
 
-// Componente para criar uma linha de conexão entre contratos
-function Connection({ start, end, color, width = 1 }: {
-  start: [number, number, number];
-  end: [number, number, number];
-  color?: string;
-  width?: number;
-}) {
-  const points = useMemo(() => [new Vector3(...start), new Vector3(...end)], [start, end]);
+        {address && (
+          <Text
+            position={[0, -0.35, 0.15]}
+            fontSize={0.13}
+            fontWeight={700}
+            color="#00ff00"
+            anchorX="center"
+            anchorY="middle"
+          >
+            Deployed at {address}
+          </Text>
+        )}
+      </group>
+    );
+  }
 
-  return (
-    <Line
-      points={points}
-      color={color}
-      lineWidth={width}
-      dashed={false}
-    />
-  );
-}
+  // Componente para criar uma linha de conexão entre contratos
+  function Connection({ start, end, color, width = 1 }: {
+    start: [number, number, number];
+    end: [number, number, number];
+    color?: string;
+    width?: number;
+  }) {
+    const points = useMemo(() => [new Vector3(...start), new Vector3(...end)], [start, end]);
 
-export default function Scene3D() {
+    return (
+      <Line
+        points={points}
+        color={color}
+        lineWidth={width}
+        dashed={false}
+      />
+    );
+  }
+
   return (
     <div className="w-full h-full flex justify-center items-center">
       <div className="max-w-full w-full md:w-[900px] lg:w-[1000px] h-[60vw] max-h-[80vh] min-h-[350px] z-10 rounded-lg overflow-hidden bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-purple-900 via-slate-900 to-indigo-950">

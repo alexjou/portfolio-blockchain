@@ -4,6 +4,7 @@ import { ethers } from 'ethers';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import '../styles/animations.css';
+import logoEther from '../assets/logoEther.png';
 
 const NAV_LINKS = [
   { to: '/seedguard', label: '1. SeedGuard', icon: '🛡️' },
@@ -65,11 +66,21 @@ const Header: React.FC = () => {
         {/* Logo e nome */}
         <div className="flex flex-row items-center gap-3">
           <Link to="/">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-400 to-purple-700 flex items-center justify-center shadow-lg">
-              <span className="font-bold text-white text-lg">EK</span>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
+              <img src={logoEther} alt="Logo Ethereum" className="w-20 h-20 object-contain animate-spin-coin" />
+              <style>{`
+        @keyframes spin-coin {
+          0% { transform: rotateY(0deg); }
+          100% { transform: rotateY(360deg); }
+        }
+        .animate-spin-coin {
+          animation: spin-coin 2.5s linear infinite;
+          transform-style: preserve-3d;
+        }
+      `}</style>
             </div>
           </Link>
-          <div className="text-sm text-white/70">Álex • Blockchain • Recife</div>
+          <div className="text-sm text-white/70">Álex Joubert • Blockchain</div>
         </div>
 
         {/* Navegação centralizada (desktop) */}
@@ -103,7 +114,7 @@ const Header: React.FC = () => {
         {/* Conta/metamask */}
         <div className="flex items-center justify-end min-w-[180px]">
           {isConnected ? (
-            <button className="relative bg-gradient-to-r from-yellow-400 to-purple-700 text-white px-4 py-2 rounded-md flex items-center shadow-md font-semibold gap-2">
+            <button className="relative bg-gradient-to-r from-green-400 to-blue-700 text-white px-4 py-2 rounded-md flex items-center shadow-md font-semibold gap-2">
               <span className="flex items-center gap-2">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />

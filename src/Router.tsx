@@ -27,6 +27,7 @@ const LayoutBase = ({ children }: { children: React.ReactNode }) => {
 
 import KipuBankPage from './pages/KipuBank';
 import Cofre from './pages/Cofre';
+import BlockChain3D from "./pages/BlockChain3D";
 
 const router = createBrowserRouter([
   {
@@ -58,6 +59,14 @@ const router = createBrowserRouter([
     element: (
       <LayoutBase>
         <Cofre />
+      </LayoutBase>
+    ),
+  },
+  {
+    path: '/blockchain3d',
+    element: (
+      <LayoutBase>
+        <BlockChain3D />
       </LayoutBase>
     ),
   },
