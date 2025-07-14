@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 import "./InterfaceICofre.sol";
 
 contract Cliente {
-    address public cofreEndereco;
+    address public cofreEndereco; // 0x10f965B5c5ab96d9d49d1c71D7D64844A3Db3533
     address public owner; // O owner do contrato Cliente
 
     // Eventos para rastrear as ações do owner do Cliente

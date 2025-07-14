@@ -35,7 +35,7 @@ export default function InteractionScene3D({ eventosCofre = [] }: { eventosCofre
         position={position}
         fontSize={fontSize}
         color={color}
-        maxWidth={2}
+        maxWidth={8}
         textAlign="center"
         anchorX="center"
         anchorY="middle"
@@ -174,11 +174,12 @@ export default function InteractionScene3D({ eventosCofre = [] }: { eventosCofre
             </Html>
 
             <FloatingText
-              position={new Vector3(0, 2.2, 0)}
+              position={new Vector3(0, 3, 0)}
               text="O contrato Cliente precisa do endereço do Cofre para interagir com ele"
               fontSize={0.18}
               color="#ffffff"
-            />            {/* Cliente (Bloco Verde) */}
+            />
+            {/* Cliente (Bloco Verde) */}
             <ContractBlock
               position={[-4, 1.5, 0]}
               color="#008800"

@@ -8,6 +8,8 @@ import InteractionScene3D from '../../components/InteractionScene3D';
 
 const Cofre: React.FC = () => {
   // Estados para mostrar código dos contratos
+  const [copiedCliente, setCopiedCliente] = useState(false);
+  const [copiedCofre, setCopiedCofre] = useState(false);
   const [showClienteCode, setShowClienteCode] = useState(false);
   const [showCofreCode, setShowCofreCode] = useState(false);
   const [clienteCode, setClienteCode] = useState('');
@@ -234,30 +236,56 @@ const Cofre: React.FC = () => {
           {/* Adiciona Scene3D logo abaixo da mensagem de introdução */}
           <div className="contract-info bg-gray-800/80 p-5 rounded-xl mb-8 text-center text-sm break-words text-gray-100">
             <strong className="text-white">Contrato Cliente:</strong><br />
-            <a
-              id="contract-link"
-              className="text-blue-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded mt-1"
-              href={`https://sepolia.etherscan.io/address/${clienteAddress}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={`Endereço do contrato Cliente: ${clienteAddress}`}
-            >
-              {clienteAddress}
-            </a>
+            <div className="flex items-center justify-center gap-2 mt-1">
+              <a
+                id="contract-link"
+                className="text-blue-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded"
+                href={`https://sepolia.etherscan.io/address/${clienteAddress}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Endereço do contrato Cliente: ${clienteAddress}`}
+              >
+                {clienteAddress}
+              </a>
+              <button
+                className={`ml-1 px-2 py-1 rounded flex items-center transition-colors duration-200 ${copiedCliente ? 'bg-green-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'}`}
+                title="Copiar endereço Cliente"
+                onClick={() => {
+                  navigator.clipboard.writeText(clienteAddress);
+                  setCopiedCliente(true);
+                  setTimeout(() => setCopiedCliente(false), 1000);
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke="#fff" strokeWidth="2" /><rect x="3" y="3" width="13" height="13" rx="2" fill="#fff" fillOpacity="0.2" stroke="#fff" strokeWidth="2" /></svg>
+              </button>
+            </div>
             <div className="text-xs mt-1 text-gray-300">(Clique para visualizar no Etherscan)</div>
             <div className="mt-2">
               <strong className="text-white">Contrato Cofre:</strong>
               <br />
-              <a
-                id="contract-link"
-                className="text-blue-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded mt-1"
-                href={`https://sepolia.etherscan.io/address/${cofreEndereco}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={`Endereço do contrato Cliente: ${cofreEndereco}`}
-              >
-                {cofreEndereco}
-              </a>
+              <div className="flex items-center justify-center gap-2 mt-1">
+                <a
+                  id="contract-link"
+                  className="text-blue-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded"
+                  href={`https://sepolia.etherscan.io/address/${cofreEndereco}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`Endereço do contrato Cofre: ${cofreEndereco}`}
+                >
+                  {cofreEndereco}
+                </a>
+                <button
+                  className={`ml-1 px-2 py-1 rounded flex items-center transition-colors duration-200 ${copiedCofre ? 'bg-green-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'}`}
+                  title="Copiar endereço Cofre"
+                  onClick={() => {
+                    navigator.clipboard.writeText(cofreEndereco);
+                    setCopiedCofre(true);
+                    setTimeout(() => setCopiedCofre(false), 1000);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke="#fff" strokeWidth="2" /><rect x="3" y="3" width="13" height="13" rx="2" fill="#fff" fillOpacity="0.2" stroke="#fff" strokeWidth="2" /></svg>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -406,30 +434,44 @@ const Cofre: React.FC = () => {
                         isEvent: false,
                         blockNumber: tx.blockNumber ? parseInt(tx.blockNumber) : 0,
                       }));
+
+                      // Filtro por endereço
+                      let todas: any[] = [];
+                      if (tipoTransacao === 'cofre') {
+                        // Só transações/eventos onde o endereço do Cofre está envolvido
+                        todas = [...txsFormatados, ...eventosFormatados].filter(tx =>
+                          (tx.from && tx.from.toLowerCase() === cofreEndereco.toLowerCase()) ||
+                          (tx.to && tx.to.toLowerCase() === cofreEndereco.toLowerCase())
+                        );
+                      } else {
+                        // Só transações/eventos onde o endereço do Cliente está envolvido
+                        todas = [...txsFormatados, ...eventosFormatados].filter(tx =>
+                          (tx.from && tx.from.toLowerCase() === clienteAddress.toLowerCase()) ||
+                          (tx.to && tx.to.toLowerCase() === clienteAddress.toLowerCase())
+                        );
+                      }
                       // Unifica por hash (prioriza transação interna, senão evento)
                       const hashSet = new Set();
-                      const todas = [...txsFormatados, ...eventosFormatados]
-                        .filter(tx => {
-                          if (hashSet.has(tx.hash)) return false;
-                          hashSet.add(tx.hash);
-                          return true;
-                        })
-                        .sort((a, b) => b.blockNumber - a.blockNumber);
+                      todas = todas.filter(tx => {
+                        if (hashSet.has(tx.hash)) return false;
+                        hashSet.add(tx.hash);
+                        return true;
+                      }).sort((a, b) => b.blockNumber - a.blockNumber);
                       return todas.map(tx => (
                         <tr key={tx.hash} className="border-b border-gray-800 hover:bg-gray-900/40">
                           <td className="py-1 pr-4 font-mono text-blue-300 max-w-[120px] truncate">
                             <a href={`https://sepolia.etherscan.io/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{tx.hash.slice(0, 10)}...{tx.hash.slice(-6)}</a>
                           </td>
                           <td className="py-1 pr-4 font-mono text-green-300 max-w-[120px] truncate">
-                            <a href={`https://sepolia.etherscan.io/address/${tx.from}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{tx.from ? tx.from.slice(0, 8) : ''}...{tx.from ? tx.from.slice(-4) : ''}</a>
+                            <a href={`https://sepolia.etherscan.io/address/${tx.from}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{tx.from ? `${tx.from.slice(0, 5)}...${tx.from.slice(-4)}` : ''}</a>
                           </td>
                           <td className="py-1 pr-4 font-mono text-yellow-300 max-w-[120px] truncate">
                             {tx.to ? (
-                              <a href={`https://sepolia.etherscan.io/address/${tx.to}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{tx.to.slice(0, 8)}...{tx.to.slice(-4)}</a>
+                              <a href={`https://sepolia.etherscan.io/address/${tx.to}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{`${tx.to.slice(0, 5)}...${tx.to.slice(-4)}`}</a>
                             ) : <span className="text-gray-400">(Contrato)</span>}
                           </td>
                           <td className="py-1 pr-4">
-                            {parseFloat(tx.value).toFixed(4)}
+                            {parseFloat(tx.value).toFixed(18)}
                           </td>
                           <td className="py-1 pr-4">
                             {tx.tipo || '-'}
