@@ -2,34 +2,9 @@ import React, { useEffect, useState } from 'react';
 import DarkCard from '../../components/DarkCard';
 import { NumericFormat } from 'react-number-format';
 import { ethers } from 'ethers';
-import { getInternalTxs } from '../../services/etherscanService';
+import { getInternalTxs, getContractEvents } from '../../services/etherscanService';
 import { useNotification } from '../../context/NotificationContext';
 import InteractionScene3D from '../../components/InteractionScene3D';
-
-// Endereço do contrato Cliente (deve ser ajustado conforme o deploy)
-const cofreEndereco = '0x10f965B5c5ab96d9d49d1c71D7D64844A3Db3533';
-const clienteAddress = "0x13cD34Ce931da65db0B61544D77A6aEc9BA90fAD";
-const clienteABI: any[] = [
-  { "inputs": [], "name": "depositar", "outputs": [], "stateMutability": "payable", "type": "function" },
-  { "inputs": [{ "internalType": "uint256", "name": "valor", "type": "uint256" }], "name": "sacar", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-  { "inputs": [{ "internalType": "address", "name": "_cofre", "type": "address" }], "stateMutability": "nonpayable", "type": "constructor" },
-  { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "ownerAddr", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "valor", "type": "uint256" }], "name": "DepositoDoOwner", "type": "event" },
-  { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "ownerAddr", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "valor", "type": "uint256" }], "name": "SaqueDoOwner", "type": "event" },
-  { "stateMutability": "payable", "type": "receive" },
-  { "inputs": [], "name": "cofreEndereco", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "consultarMeuSaldoNoCofre", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "owner", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }
-];
-
-function formatarETH(valor: any, casasDecimais = 8) {
-  if (typeof valor === 'bigint' || typeof valor === 'object') {
-    const valorStr = parseFloat(ethers.formatEther(valor)).toFixed(casasDecimais);
-    return valorStr.replace(/\.?0+$/, '') + ' ETH';
-  } else {
-    const valorStr = parseFloat(valor).toFixed(casasDecimais);
-    return valorStr.replace(/\.?0+$/, '') + ' ETH';
-  }
-}
 
 const Cofre: React.FC = () => {
   // Estados para mostrar código dos contratos
@@ -38,21 +13,27 @@ const Cofre: React.FC = () => {
   const [clienteCode, setClienteCode] = useState('');
   const [cofreCode, setCofreCode] = useState('');
   const [transacoesCofre, setTransacoesCofre] = useState<any[]>([]);
+  const [eventosCofre, setEventosCofre] = useState<any[]>([]);
   const [loadingTransacoes, setLoadingTransacoes] = useState(false);
   // 'cofre' = transações internas do Cofre, 'cliente' = transações internas do Cliente
   const [tipoTransacao, setTipoTransacao] = useState<'cofre' | 'cliente'>('cofre');
 
-  // Carrega o conteúdo dos contratos Solidity
-  useEffect(() => {
-    fetch('/src/pages/Cofre/Cliente.sol')
-      .then(res => res.text())
-      .then(text => setClienteCode(text))
-      .catch(() => setClienteCode('// Erro ao carregar Cliente.sol'));
-    fetch('/src/pages/Cofre/Cofre.sol')
-      .then(res => res.text())
-      .then(text => setCofreCode(text))
-      .catch(() => setCofreCode('// Erro ao carregar Cofre.sol'));
-  }, []);
+  // Endereço do contrato Cliente (deve ser ajustado conforme o deploy)
+  const cofreEndereco = '0x10f965B5c5ab96d9d49d1c71D7D64844A3Db3533';
+  const clienteAddress = "0x13cD34Ce931da65db0B61544D77A6aEc9BA90fAD";
+  const clienteABI: any[] = [
+    { "inputs": [], "name": "depositar", "outputs": [], "stateMutability": "payable", "type": "function" },
+    { "inputs": [{ "internalType": "uint256", "name": "valor", "type": "uint256" }], "name": "sacar", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+    { "inputs": [{ "internalType": "address", "name": "_cofre", "type": "address" }], "stateMutability": "nonpayable", "type": "constructor" },
+    { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "ownerAddr", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "valor", "type": "uint256" }], "name": "DepositoDoOwner", "type": "event" },
+    { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "ownerAddr", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "valor", "type": "uint256" }], "name": "SaqueDoOwner", "type": "event" },
+    { "stateMutability": "payable", "type": "receive" },
+    { "inputs": [], "name": "cofreEndereco", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [], "name": "consultarMeuSaldoNoCofre", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [], "name": "owner", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }
+  ];
+
+
   const { showNotification } = useNotification();
   const [connected, setConnected] = useState(false);
   const [saldoNoCofre, setSaldoNoCofre] = useState('0.0 ETH');
@@ -64,51 +45,33 @@ const Cofre: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [contrato, setContrato] = useState<any>(null);
 
-  // Buscar transações internas de um endereço (Cofre ou Cliente)
-  const buscarTransacoesInternas = async (endereco: string) => {
+
+  function formatarETH(valor: any, casasDecimais = 8) {
+    if (typeof valor === 'bigint' || typeof valor === 'object') {
+      const valorStr = parseFloat(ethers.formatEther(valor)).toFixed(casasDecimais);
+      return valorStr.replace(/\.?0+$/, '') + ' ETH';
+    } else {
+      const valorStr = parseFloat(valor).toFixed(casasDecimais);
+      return valorStr.replace(/\.?0+$/, '') + ' ETH';
+    }
+  }
+  // Buscar e armazenar transações internas e eventos do Cofre apenas uma vez
+  const buscarDadosCofre = async () => {
     setLoadingTransacoes(true);
     try {
-      const result = await getInternalTxs(endereco);
-      setTransacoesCofre(result);
+      const [txs, eventos] = await Promise.all([
+        getInternalTxs(cofreEndereco),
+        getContractEvents(cofreEndereco)
+      ]);
+      setTransacoesCofre(txs);
+      setEventosCofre(eventos);
       setLoadingTransacoes(false);
     } catch (error) {
       setTransacoesCofre([]);
+      setEventosCofre([]);
       setLoadingTransacoes(false);
     }
   };
-
-  // Busca transações internas apenas quando conectado ou tipoTransacao muda
-  useEffect(() => {
-    if (!connected) return;
-    buscarTransacoesInternas(tipoTransacao === 'cofre' ? cofreEndereco : clienteAddress);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connected, tipoTransacao]);
-
-  useEffect(() => {
-    const checkWallet = async () => {
-      try {
-        const eth = (window as any).ethereum;
-        if (!eth) return;
-        const accounts = await eth.request({ method: 'eth_accounts' });
-        if (accounts && accounts.length > 0) {
-          const _provider = new ethers.BrowserProvider(eth);
-          const _signer = await _provider.getSigner();
-          const address = await _signer.getAddress();
-          const contractCode = await _provider.getCode(clienteAddress);
-          if (contractCode === '0x') return;
-          const _contrato = new ethers.Contract(clienteAddress, clienteABI, _signer);
-          setContrato(_contrato);
-          setConnected(true);
-          setStatusMsg(`Carteira conectada! Endereço: ${address}`);
-          setShowStatus(true);
-          window.dispatchEvent(new Event('walletUpdated'));
-          // Verifica se é owner
-          await atualizarSaldoNoCofre(_contrato);
-        }
-      } catch { }
-    };
-    checkWallet();
-  }, []);
 
   const mostrarToastAviso = (mensagem: string, tipo: 'success' | 'error' | 'warning' | 'info' = 'info') => {
     showNotification(mensagem, tipo);
@@ -213,10 +176,56 @@ const Cofre: React.FC = () => {
     }
   };
 
+  // Busca dados do Cofre apenas uma vez por refresh/conexão
+  useEffect(() => {
+    if (!connected) return;
+    buscarDadosCofre();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected]);
+
+  // Carrega o conteúdo dos contratos Solidity
+  useEffect(() => {
+    fetch('/src/pages/Cofre/Cliente.sol')
+      .then(res => res.text())
+      .then(text => setClienteCode(text))
+      .catch(() => setClienteCode('// Erro ao carregar Cliente.sol'));
+    fetch('/src/pages/Cofre/Cofre.sol')
+      .then(res => res.text())
+      .then(text => setCofreCode(text))
+      .catch(() => setCofreCode('// Erro ao carregar Cofre.sol'));
+  }, []);
+
+  useEffect(() => {
+    const checkWallet = async () => {
+      try {
+        const eth = (window as any).ethereum;
+        if (!eth) return;
+        const accounts = await eth.request({ method: 'eth_accounts' });
+        if (accounts && accounts.length > 0) {
+          const _provider = new ethers.BrowserProvider(eth);
+          const _signer = await _provider.getSigner();
+          const address = await _signer.getAddress();
+          const contractCode = await _provider.getCode(clienteAddress);
+          if (contractCode === '0x') return;
+          const _contrato = new ethers.Contract(clienteAddress, clienteABI, _signer);
+          setContrato(_contrato);
+          setConnected(true);
+          setStatusMsg(`Carteira conectada! Endereço: ${address}`);
+          setShowStatus(true);
+          window.dispatchEvent(new Event('walletUpdated'));
+          // Verifica se é owner
+          await atualizarSaldoNoCofre(_contrato);
+        }
+      } catch { }
+    };
+    checkWallet();
+  }, []);
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-blue-950 to-purple-950 text-white flex flex-col">
       <div className="flex justify-center m-8">
-        <InteractionScene3D />
+        <InteractionScene3D eventosCofre={eventosCofre} />
       </div>
       <main className="flex-1 flex items-center justify-center py-5 px-2">
         <DarkCard className="max-w-4xl w-full mx-auto">
@@ -353,7 +362,7 @@ const Cofre: React.FC = () => {
             </div>
             {loadingTransacoes ? (
               <div className="text-gray-400 text-sm">Carregando transações...</div>
-            ) : transacoesCofre.length === 0 ? (
+            ) : (transacoesCofre.length === 0 && eventosCofre.length === 0) ? (
               <div className="text-gray-400 text-sm">Nenhuma transação encontrada ou não foi possível buscar.</div>
             ) : (
               <div className="overflow-x-auto">
@@ -369,41 +378,71 @@ const Cofre: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {transacoesCofre.map(tx => (
-                      <tr key={tx.hash || tx.transactionHash} className="border-b border-gray-800 hover:bg-gray-900/40">
-                        <td className="py-1 pr-4 font-mono text-blue-300 max-w-[120px] truncate">
-                          <a href={`https://sepolia.etherscan.io/tx/${tx.hash || tx.transactionHash}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{(tx.hash || tx.transactionHash).slice(0, 10)}...{(tx.hash || tx.transactionHash).slice(-6)}</a>
-                        </td>
-                        <td className="py-1 pr-4 font-mono text-green-300 max-w-[120px] truncate">
-                          <a href={`https://sepolia.etherscan.io/address/${tx.from}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{tx.from ? tx.from.slice(0, 8) : ''}...{tx.from ? tx.from.slice(-4) : ''}</a>
-                        </td>
-                        <td className="py-1 pr-4 font-mono text-yellow-300 max-w-[120px] truncate">
-                          {tx.to ? (
-                            <a href={`https://sepolia.etherscan.io/address/${tx.to}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{tx.to.slice(0, 8)}...{tx.to.slice(-4)}</a>
-                          ) : <span className="text-gray-400">(Contrato)</span>}
-                        </td>
-                        <td className="py-1 pr-4">
-                          {ethers.formatEther ? parseFloat(ethers.formatEther(tx.value || tx.amount)).toFixed(4) : (parseFloat(tx.value || tx.amount) / 1e18).toFixed(4)}
-                        </td>
-                        <td className="py-1 pr-4">
-                          {(() => {
-                            // Se o destino é o contrato, é um depósito; se a origem é o contrato, é um saque
-                            const to = (tx.to || '').toLowerCase();
-                            const from = (tx.from || '').toLowerCase();
-                            const cofre = cofreEndereco.toLowerCase();
-                            if (to === cofre) return 'Depósito';
-                            if (from === cofre) return 'Saque';
-                            return '-';
-                          })()}
-                        </td>
-                        <td className="py-1 pr-4">
-                          <a href={`https://sepolia.etherscan.io/tx/${tx.hash || tx.transactionHash}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Ver</a>
-                        </td>
-                      </tr>
-                    ))}
+                    {/* Unifica e ordena por bloco, sem duplicar hash */}
+                    {(() => {
+                      // Decodifica eventos relevantes (DepositoDoOwner, SaqueDoOwner)
+                      const eventosFormatados = eventosCofre.map(ev => {
+                        const topics = ev.topics || [];
+                        let tipo = '-';
+                        if (topics[0] === '0x453529dac6ef979a41d67fbeabdfae29903c185f64d77aa690df9eca5f1aaa60') tipo = 'Depósito';
+                        if (topics[0] === '0x014a0fee2e4f4636f4defb7c3c3662226d3d28152c5708f9ad50ef2e02a9b278') tipo = 'Saque';
+                        const from = '0x' + topics[1]?.slice(-40);
+                        const value = ev.data ? ethers.formatEther(BigInt(ev.data)) : '0.0000';
+                        return {
+                          hash: ev.transactionHash,
+                          from,
+                          to: cofreEndereco,
+                          value,
+                          tipo,
+                          isEvent: true,
+                          blockNumber: ev.blockNumber ? parseInt(ev.blockNumber) : 0,
+                        };
+                      });
+                      // Transações internas
+                      const txsFormatados = transacoesCofre.map(tx => ({
+                        ...tx,
+                        value: ethers.formatEther(tx.value || tx.amount || '0'),
+                        tipo: (tx.to && tx.to.toLowerCase() === cofreEndereco.toLowerCase()) ? 'Depósito' : (tx.from && tx.from.toLowerCase() === cofreEndereco.toLowerCase()) ? 'Saque' : '-',
+                        isEvent: false,
+                        blockNumber: tx.blockNumber ? parseInt(tx.blockNumber) : 0,
+                      }));
+                      // Unifica por hash (prioriza transação interna, senão evento)
+                      const hashSet = new Set();
+                      const todas = [...txsFormatados, ...eventosFormatados]
+                        .filter(tx => {
+                          if (hashSet.has(tx.hash)) return false;
+                          hashSet.add(tx.hash);
+                          return true;
+                        })
+                        .sort((a, b) => b.blockNumber - a.blockNumber);
+                      return todas.map(tx => (
+                        <tr key={tx.hash} className="border-b border-gray-800 hover:bg-gray-900/40">
+                          <td className="py-1 pr-4 font-mono text-blue-300 max-w-[120px] truncate">
+                            <a href={`https://sepolia.etherscan.io/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{tx.hash.slice(0, 10)}...{tx.hash.slice(-6)}</a>
+                          </td>
+                          <td className="py-1 pr-4 font-mono text-green-300 max-w-[120px] truncate">
+                            <a href={`https://sepolia.etherscan.io/address/${tx.from}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{tx.from ? tx.from.slice(0, 8) : ''}...{tx.from ? tx.from.slice(-4) : ''}</a>
+                          </td>
+                          <td className="py-1 pr-4 font-mono text-yellow-300 max-w-[120px] truncate">
+                            {tx.to ? (
+                              <a href={`https://sepolia.etherscan.io/address/${tx.to}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{tx.to.slice(0, 8)}...{tx.to.slice(-4)}</a>
+                            ) : <span className="text-gray-400">(Contrato)</span>}
+                          </td>
+                          <td className="py-1 pr-4">
+                            {parseFloat(tx.value).toFixed(4)}
+                          </td>
+                          <td className="py-1 pr-4">
+                            {tx.tipo || '-'}
+                          </td>
+                          <td className="py-1 pr-4">
+                            <a href={`https://sepolia.etherscan.io/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Ver</a>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
-                <div className="text-xs mt-2 text-gray-400">* Mostrando o histórico das transações internas do contrato {tipoTransacao === 'cofre' ? 'Cofre' : 'Cliente'}. Os dados são fornecidos pela API do Etherscan.</div>
+                <div className="text-xs mt-2 text-gray-400">* Mostrando o histórico das transações internas e eventos do contrato Cofre. Os dados são fornecidos pela API do Etherscan.</div>
               </div>
             )}
           </div>
