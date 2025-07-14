@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && npx gh-pages -d dist"
   },
   "dependencies": {
     "@react-three/drei": "^10.5.0",
@@ -28,6 +29,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react-swc": "^3.10.2",
+    "gh-pages": "^6.3.0",
     "typescript": "~5.8.3",
     "vite": "^7.0.4"
   }
