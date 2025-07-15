@@ -27,7 +27,6 @@ export default function HomePage() {
             <span className="bg-cyan-500 px-4 py-1 rounded-full text-base font-semibold shadow">Ethers.js</span>
             <span className="bg-pink-500 px-4 py-1 rounded-full text-base font-semibold shadow">Web3</span>
             <span className="bg-gray-700 px-4 py-1 rounded-full text-base font-semibold shadow">Segurança</span>
-            <span className="bg-purple-700 px-4 py-1 rounded-full text-base font-semibold shadow">Testes</span>
           </div>
         </div>
       </section>

@@ -120,7 +120,8 @@ const KipuBank: React.FC = () => {
 
   // Carrega o conteúdo do contrato Solidity
   useEffect(() => {
-    fetch('/src/pages/KipuBank/KipuBank.sol')
+    const base = import.meta.env.BASE_URL || '/';
+    fetch(base + 'KipuBank.sol')
       .then(res => res.text())
       .then(text => setContractCode(text))
       .catch(() => setContractCode('// Erro ao carregar o contrato Solidity.'));

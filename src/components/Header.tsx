@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { to: '/seedguard', label: '1. SeedGuard', icon: '🛡️' },
   { to: '/kipubank', label: '2. KipuBank', icon: '🏦' },
   { to: '/cofre', label: '3. Cofre', icon: '💰' },
+  { to: '/simpledex', label: '4. SimpleDEX', icon: '🔄' },
 ];
 
 const Header: React.FC = () => {

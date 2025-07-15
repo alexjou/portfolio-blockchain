@@ -187,11 +187,12 @@ const Cofre: React.FC = () => {
 
   // Carrega o conteúdo dos contratos Solidity
   useEffect(() => {
-    fetch('/src/pages/Cofre/Cliente.sol')
+    const base = import.meta.env.BASE_URL || '/';
+    fetch(base + 'Cliente.sol')
       .then(res => res.text())
       .then(text => setClienteCode(text))
       .catch(() => setClienteCode('// Erro ao carregar Cliente.sol'));
-    fetch('/src/pages/Cofre/Cofre.sol')
+    fetch(base + 'Cofre.sol')
       .then(res => res.text())
       .then(text => setCofreCode(text))
       .catch(() => setCofreCode('// Erro ao carregar Cofre.sol'));

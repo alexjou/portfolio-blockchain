@@ -28,6 +28,7 @@ const LayoutBase = ({ children }: { children: React.ReactNode }) => {
 import KipuBankPage from './pages/KipuBank';
 import Cofre from './pages/Cofre';
 import BlockChain3D from "./pages/BlockChain3D";
+import SimpleDex from "./pages/SimpleDex";
 
 const router = createHashRouter([
   {
@@ -67,6 +68,14 @@ const router = createHashRouter([
     element: (
       <LayoutBase>
         <BlockChain3D />
+      </LayoutBase>
+    ),
+  },
+  {
+    path: '/simpledex',
+    element: (
+      <LayoutBase>
+        <SimpleDex />
       </LayoutBase>
     ),
   },
