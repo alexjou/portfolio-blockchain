@@ -39,7 +39,6 @@ export default function Blockchain3DDecoration({ side = "left" }: { side?: "left
         // Entrada: vem da borda do site
         if (appear || appearTop) {
           const targetX = baseX;
-          const fromX = (side === 'left' ? -8 : 8); // entra da borda
           if (Math.abs(ref.current.position.x - targetX) > 0.05) {
             ref.current.position.x += (targetX - ref.current.position.x) * 0.12;
           } else {
