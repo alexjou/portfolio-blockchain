@@ -208,8 +208,10 @@ const SeedGuard: React.FC = () => {
 
   // Carrega o conteúdo do contrato Solidity
   useEffect(() => {
-    fetch('/src/pages/SeedGuard/SeedGuard.sol')
-      .then(res => res.text())
+    // Corrige o caminho para funcionar em produção (GitHub Pages)
+    const base = import.meta.env.BASE_URL || '/';
+    fetch(base + 'SeedGuard.sol')
+      .then(res => res.ok ? res.text() : Promise.reject())
       .then(text => setContractCode(text))
       .catch(() => setContractCode('// Erro ao carregar o contrato Solidity.'));
   }, []);
