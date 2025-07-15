@@ -1,4 +1,5 @@
 import { images } from '../assets/images';
+import perfil from '../assets/me.jpeg';
 import { Link } from "react-router-dom";
 
 export default function HomePage() {
@@ -7,9 +8,17 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center px-4 py-20 gap-12">
         <div className="space-y-10 w-full max-w-3xl text-center">
-          <h1 className="text-6xl md:text-7xl font-extrabold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-gradient-move drop-shadow-lg">
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-gradient-move drop-shadow-lg">
             Portfólio <span className="block md:inline">Blockchain com Ethereum</span>
           </h1>
+          <div className="flex justify-center mb-4">
+            <img
+              src={perfil}
+              alt="Foto do autor"
+              className="w-86 h-86 rounded-full border-4 border-pink-400 shadow-lg object-cover"
+              style={{ marginTop: '-12px' }}
+            />
+          </div>
           <p className="text-xl md:text-2xl text-gray-200 max-w-2xl mx-auto font-medium drop-shadow">
             Bem-vindo!<br />
             Sou desenvolvedor focado em <span className="font-bold text-blue-300">Ethereum & Web3</span>, apaixonado por criar soluções descentralizadas, seguras e inovadoras.<br /><br />
