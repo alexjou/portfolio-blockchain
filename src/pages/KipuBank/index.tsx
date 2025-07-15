@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DarkCard from '../../components/DarkCard';
 import { NumericFormat } from 'react-number-format';
 import { useNotification } from '../../context/NotificationContext';
+import Footer from "../../components/Footer";
 import { ethers } from 'ethers';
 
 const contratoAddress = "0xd2f44f2edccbbac4b1d058c6ddaebfb203681bd6";
@@ -503,9 +504,7 @@ const KipuBank: React.FC = () => {
           </div>
         </DarkCard>
       </main>
-      <footer className="mt-auto py-6 text-center text-gray-400">
-        &copy; {new Date().getFullYear()} Portfólio Blockchain ETH-KIPU + UFPE. Todos os direitos reservados.
-      </footer>
+      <Footer />
       <style>{`
         @keyframes spin-slow {
           from { transform: rotate(0deg); }

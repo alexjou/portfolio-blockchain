@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { NumericFormat } from "react-number-format";
 import type { NumberFormatValues } from "react-number-format";
 import { ethers } from "ethers";
+import Footer from "../../components/Footer";
 import simpleDexAbiJson from "./SimpleDEX.abi.json";
 import tokenAAbiJson from "./TokenA.abi.json";
 import tokenBAbiJson from "./TokenB.abi.json";
@@ -505,9 +506,7 @@ const SimpleDex: React.FC = () => {
           </div>
         </div>
       </main>
-      <footer className="mt-auto py-6 text-center text-gray-400">
-        &copy; {new Date().getFullYear()} Portfólio Blockchain ETH-KIPU + UFPE. Todos os direitos reservados.
-      </footer>
+      <Footer />
       <style>{`
         @keyframes spin-slow {
           from { transform: rotate(0deg); }

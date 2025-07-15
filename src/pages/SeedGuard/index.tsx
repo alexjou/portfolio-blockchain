@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DarkCard from '../../components/DarkCard';
+import Footer from "../../components/Footer";
 import { ethers } from 'ethers';
 
 const contratoAddress = "0x907daae5c9bd87398f2423a7389f5013013b6958";
@@ -60,6 +61,7 @@ const SeedGuard: React.FC = () => {
       }
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' }) as string[];
       if (!accounts || accounts.length === 0) {
+        <Footer />
         setStatusMsg('Nenhuma conta selecionada.');
         setResult('Desbloqueie sua MetaMask e tente novamente.');
         setResultType('erro');
@@ -339,10 +341,7 @@ const SeedGuard: React.FC = () => {
         </DarkCard>
       </main>
 
-      {/* Footer */}
-      <footer className="mt-auto py-6 text-center text-gray-400">
-        &copy; {new Date().getFullYear()} Portfólio Blockchain ETH-KIPU + UFPE. Todos os direitos reservados.
-      </footer>
+      <Footer />
 
       {/* Custom Styles */}
       <style>{`

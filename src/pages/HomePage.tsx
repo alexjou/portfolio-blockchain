@@ -1,6 +1,7 @@
 import { images } from '../assets/images';
 import perfil from '../assets/me.jpeg';
 import { Link } from "react-router-dom";
+import Footer from "../components/Footer";
 
 export default function HomePage() {
   return (
@@ -80,13 +81,7 @@ export default function HomePage() {
       <section id="projetos" className="px-8 py-12 flex flex-col items-center">
         <h2 className="text-2xl font-bold mb-8 text-center">Projetos</h2>
         <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-8 justify-center">
-          {/* Card BlockChain3D */}
-          <Link to="/blockchain3d" className="w-full max-w-xs sm:max-w-sm md:max-w-md rounded-2xl border-4 border-pink-500 bg-gradient-to-br from-gray-900 via-pink-900 to-blue-900 p-8 flex flex-col items-center shadow-2xl hover:scale-105 transition-transform cursor-pointer group">
-            <span className="text-5xl mb-3 group-hover:scale-110 transition-transform">🌐</span>
-            <span className="text-pink-300 font-extrabold text-xl mb-2 drop-shadow">BlockChain3D</span>
-            <span className="text-gray-100 text-base text-center mb-2 leading-relaxed">Visualize conceitos de blockchain e Ethereum em 3D.<br />Interaja com blocos, transações e contratos de forma imersiva.</span>
-            <span className="text-xs text-pink-400 mt-2 font-semibold">Experiência 3D</span>
-          </Link>
+
           {/* Card SeedGuard */}
           <Link to="/seedguard" className="w-full max-w-xs sm:max-w-sm md:max-w-md rounded-2xl border-4 border-green-500 bg-gradient-to-br from-gray-900 via-green-900 to-cyan-900 p-8 flex flex-col items-center shadow-2xl hover:scale-105 transition-transform cursor-pointer group">
             <span className="text-5xl mb-3 group-hover:scale-110 transition-transform">🛡️</span>
@@ -94,6 +89,7 @@ export default function HomePage() {
             <span className="text-gray-100 text-base text-center mb-2 leading-relaxed">Guarde mensagens de forma segura na blockchain Ethereum.<br />Salve e recupere textos protegidos por sua carteira.</span>
             <span className="text-xs text-green-400 mt-2 font-semibold">Guardião de mensagens</span>
           </Link>
+
           {/* Card KipuBank */}
           <Link to="/kipubank" className="w-full max-w-xs sm:max-w-sm md:max-w-md rounded-2xl border-4 border-blue-500 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 p-8 flex flex-col items-center shadow-2xl hover:scale-105 transition-transform cursor-pointer group">
             <span className="text-5xl mb-3 group-hover:scale-110 transition-transform">🏦</span>
@@ -101,12 +97,29 @@ export default function HomePage() {
             <span className="text-gray-100 text-base text-center mb-2 leading-relaxed">Banco digital descentralizado.<br />Deposite, saque e consulte seu saldo em ETH com limite e controle via smart contract.</span>
             <span className="text-xs text-blue-400 mt-2 font-semibold">Banco descentralizado</span>
           </Link>
+
           {/* Card Cofre */}
           <Link to="/cofre" className="w-full max-w-xs sm:max-w-sm md:max-w-md rounded-2xl border-4 border-yellow-500 bg-gradient-to-br from-gray-900 via-yellow-900 to-orange-900 p-8 flex flex-col items-center shadow-2xl hover:scale-105 transition-transform cursor-pointer group">
             <span className="text-5xl mb-3 group-hover:scale-110 transition-transform">🔐</span>
             <span className="text-yellow-300 font-extrabold text-xl mb-2 drop-shadow">Cofre</span>
             <span className="text-gray-100 text-base text-center mb-2 leading-relaxed">Gerencie o saldo do Cliente em um Cofre digital.<br />Deposite, saque e acompanhe transações internas entre contratos Ethereum.</span>
             <span className="text-xs text-yellow-400 mt-2 font-semibold">Cofre de saldo</span>
+          </Link>
+
+          {/* Card SimpleDex */}
+          <Link to="/simpledex" className="w-full max-w-xs sm:max-w-sm md:max-w-md rounded-2xl border-4 border-purple-500 bg-gradient-to-br from-gray-900 via-purple-900 to-blue-900 p-8 flex flex-col items-center shadow-2xl hover:scale-105 transition-transform cursor-pointer group">
+            <span className="text-5xl mb-3 group-hover:scale-110 transition-transform">🔄</span>
+            <span className="text-purple-300 font-extrabold text-xl mb-2 drop-shadow">SimpleDex</span>
+            <span className="text-gray-100 text-base text-center mb-2 leading-relaxed">DEX simples para Ethereum: adicione/remova liquidez, aprove tokens, faça swaps e veja os contratos.<br />Frontend moderno, integração com MetaMask e Ethers.js.</span>
+            <span className="text-xs text-purple-400 mt-2 font-semibold">DEX & Liquidez</span>
+          </Link>
+
+          {/* Card BlockChain3D */}
+          <Link to="/blockchain3d" className="w-full max-w-xs sm:max-w-sm md:max-w-md rounded-2xl border-4 border-pink-500 bg-gradient-to-br from-gray-900 via-pink-900 to-blue-900 p-8 flex flex-col items-center shadow-2xl hover:scale-105 transition-transform cursor-pointer group">
+            <span className="text-5xl mb-3 group-hover:scale-110 transition-transform">🌐</span>
+            <span className="text-pink-300 font-extrabold text-xl mb-2 drop-shadow">BlockChain3D</span>
+            <span className="text-gray-100 text-base text-center mb-2 leading-relaxed">Visualize conceitos de blockchain e Ethereum em 3D.<br />Interaja com blocos, transações e contratos de forma imersiva.</span>
+            <span className="text-xs text-pink-400 mt-2 font-semibold">Experiência 3D</span>
           </Link>
         </div>
       </section>
@@ -123,9 +136,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="mt-auto py-6 text-center text-gray-400">
-        &copy; {new Date().getFullYear()} Portfólio Blockchain ETH-KIPU + UFPE. Todos os direitos reservados.
-      </footer>
+      <Footer />
 
       {/* Custom Styles */}
       <style>{`

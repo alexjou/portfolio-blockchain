@@ -1,3 +1,4 @@
+import Footer from "../components/Footer";
 import Scene3D from "../components/Scene3D";
 
 export default function BlockChain3D() {
@@ -20,6 +21,7 @@ export default function BlockChain3D() {
         </div>
         <span className="mt-6 text-pink-300 font-bold text-lg">Experiência 3D interativa</span>
       </div>
+      <Footer />
       <style>{`
         @keyframes gradient-move {
           0% { background-position: 0% 50%; }

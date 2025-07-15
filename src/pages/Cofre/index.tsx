@@ -1,3 +1,4 @@
+import Footer from "../../components/Footer";
 import React, { useEffect, useState } from 'react';
 import DarkCard from '../../components/DarkCard';
 import { NumericFormat } from 'react-number-format';
@@ -522,9 +523,7 @@ const Cofre: React.FC = () => {
 
         </DarkCard>
       </main>
-      <footer className="mt-auto py-6 text-center text-gray-400">
-        &copy; {new Date().getFullYear()} Portfólio Blockchain ETH-KIPU + UFPE. Todos os direitos reservados.
-      </footer>
+      <Footer />
       <style>{`
         @keyframes spin-slow {
           from { transform: rotate(0deg); }
