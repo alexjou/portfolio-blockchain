@@ -5,83 +5,391 @@ import { NumericFormat } from "react-number-format";
 import type { NumberFormatValues } from "react-number-format";
 import { ethers } from "ethers";
 import Footer from "../../components/Footer";
+import { useNotification } from "../../context/NotificationContext";
 import simpleDexAbiJson from "./SimpleDEX.abi.json";
 import tokenAAbiJson from "./TokenA.abi.json";
 import tokenBAbiJson from "./TokenB.abi.json";
 
-const SIMPLE_DEX_ADDRESS = "0x2d8454E3AccD8177dC58e3970cB3eF98D7942746";
-const TOKEN_A_ADDRESS = "0xaCA80d00b8e1a18d512E0bC0614aB182b395f4bE";
-const TOKEN_B_ADDRESS = "0x2eBB1f90fFC07e4b34122E115e78d9cf87b80914";
+const SIMPLE_DEX_ADDRESS = "0xAcCF736f18a8E78c1CBC2F808E5c735538EaAA10";
+const TOKEN_A_ADDRESS = "0x61Cfcf1919756e61B4bAE0b65c0458b467F5031F";
+const TOKEN_B_ADDRESS = "0xa91B3ccb46365003Ca83B6145908f44Bd2ebd21a";
 const simpleDexAbi: any[] = simpleDexAbiJson;
 
 const SimpleDex: React.FC = () => {
-  const [amountA, setAmountA] = useState(""); // Adicionar Liquidez
+  const { showNotification } = useNotification();
+
+  // Estados para liquidez
+  const [amountA, setAmountA] = useState("");
   const [amountB, setAmountB] = useState("");
-  const [amountARemove, setAmountARemove] = useState(""); // Remover Liquidez
+  const [amountARemove, setAmountARemove] = useState("");
   const [amountBRemove, setAmountBRemove] = useState("");
-  const [logRemove, setLogRemove] = useState("");
-  const [amountAApprove, setAmountAApprove] = useState("");
-  const [amountBApprove, setAmountBApprove] = useState("");
-  const [logA, setLogA] = useState("");
-  const [logB, setLogB] = useState("");
-  const [logLiq, setLogLiq] = useState("");
+
+  // Estados para swap
   const [amountAIn, setAmountAIn] = useState("");
   const [amountBIn, setAmountBIn] = useState("");
+
+  // Estados para mint/burn
+  const [mintAmountA, setMintAmountA] = useState("");
+  const [mintAmountB, setMintAmountB] = useState("");
+  const [burnAmountA, setBurnAmountA] = useState("");
+  const [burnAmountB, setBurnAmountB] = useState("");
+
+  // Estados de controle
   const [statusMsg, setStatusMsg] = useState("Carteira não conectada");
   const [showStatus, setShowStatus] = useState(false);
   const [loading, setLoading] = useState(false);
   const [contract, setContract] = useState<any>(null);
   const [connected, setConnected] = useState(false);
-  const [resultado, setResultado] = useState("");
-  const [aprovando, setAprovando] = useState(false);
   const [copied, setCopied] = useState<string>("");
+
+  // Estados para saldos
+  const [tokenABalance, setTokenABalance] = useState("0");
+  const [tokenBBalance, setTokenBBalance] = useState("0");
+  const [reserveA, setReserveA] = useState("0");
+  const [reserveB, setReserveB] = useState("0");
+  const [isOwner, setIsOwner] = useState(false);
+
+  // Estados para exibir os contratos .sol
+  const [showSimpleDexCode, setShowSimpleDexCode] = useState(false);
+  const [showTokenACode, setShowTokenACode] = useState(false);
+  const [showTokenBCode, setShowTokenBCode] = useState(false);
+  const [simpleDexCode, setSimpleDexCode] = useState('');
+  const [tokenACode, setTokenACode] = useState('');
+  const [tokenBCode, setTokenBCode] = useState('');
+
+  // Notificação
+  const mostrarToastAviso = (mensagem: string, tipo: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    showNotification(mensagem, tipo);
+  };
 
   const handleCopy = (address: string) => {
     navigator.clipboard.writeText(address);
     setCopied(address);
     setTimeout(() => setCopied(""), 1200);
   };
-  // Função para aprovar TokenA
-  const aprovarTokenA = async (valor: string) => {
-    setAprovando(true);
-    setLogA("");
+
+  // Função para verificar saldos
+  const checkBalances = async (signer: any) => {
     try {
-      if (!(window as any).ethereum) throw new Error("MetaMask não detectado!");
-      const eth = (window as any).ethereum;
-      await eth.request({ method: "eth_requestAccounts" });
-      const provider = new ethers.BrowserProvider(eth);
-      const signer = await provider.getSigner();
       const tokenA = new ethers.Contract(TOKEN_A_ADDRESS, tokenAAbiJson, signer);
-      const tx = await tokenA.approve(SIMPLE_DEX_ADDRESS, ethers.parseUnits(valor, 18));
-      setLogA(`Aprovando TokenA... Hash: ${tx.hash}`);
-      await tx.wait();
-      setLogA("TokenA aprovado para o SimpleDEX!");
-    } catch (err: any) {
-      setLogA("Erro ao aprovar TokenA: " + (err.message || "Erro desconhecido"));
+      const tokenB = new ethers.Contract(TOKEN_B_ADDRESS, tokenBAbiJson, signer);
+      const address = await signer.getAddress();
+
+      const balanceA = await tokenA.balanceOf(address);
+      const balanceB = await tokenB.balanceOf(address);
+
+      setTokenABalance(ethers.formatUnits(balanceA, 18));
+      setTokenBBalance(ethers.formatUnits(balanceB, 18));
+    } catch (error) {
+      console.error("Erro ao verificar saldos:", error);
     }
-    setAprovando(false);
   };
 
-  // Função para aprovar TokenB
-  const aprovarTokenB = async (valor: string) => {
-    setAprovando(true);
-    setLogB("");
+  // Função para verificar reservas do DEX
+  const checkReserves = async () => {
     try {
-      if (!(window as any).ethereum) throw new Error("MetaMask não detectado!");
-      const eth = (window as any).ethereum;
-      await eth.request({ method: "eth_requestAccounts" });
-      const provider = new ethers.BrowserProvider(eth);
-      const signer = await provider.getSigner();
-      const tokenB = new ethers.Contract(TOKEN_B_ADDRESS, tokenBAbiJson, signer);
-      const tx = await tokenB.approve(SIMPLE_DEX_ADDRESS, ethers.parseUnits(valor, 18));
-      setLogB(`Aprovando TokenB... Hash: ${tx.hash}`);
-      await tx.wait();
-      setLogB("TokenB aprovado para o SimpleDEX!");
-    } catch (err: any) {
-      setLogB("Erro ao aprovar TokenB: " + (err.message || "Erro desconhecido"));
+      if (!contract) return;
+
+      const reserveAValue = await contract.reserveA();
+      const reserveBValue = await contract.reserveB();
+
+      setReserveA(ethers.formatUnits(reserveAValue, 18));
+      setReserveB(ethers.formatUnits(reserveBValue, 18));
+    } catch (error) {
+      console.error("Erro ao verificar reservas:", error);
     }
-    setAprovando(false);
   };
+
+  // Função para verificar se é owner
+  const checkOwner = async () => {
+    try {
+      if (!contract) {
+        console.log("Contrato não disponível");
+        return;
+      }
+
+      const ownerAddress = await contract.owner();
+      console.log("Owner do contrato:", ownerAddress);
+
+      // Tentar obter o signer de diferentes formas
+      let signer = null;
+      let userAddress = null;
+
+      // Método 1: Direto do contrato
+      if (contract.signer) {
+        try {
+          signer = await contract.signer;
+          if (signer && typeof signer.getAddress === 'function') {
+            userAddress = await signer.getAddress();
+            console.log("Método 1 - Endereço do usuário:", userAddress);
+          }
+        } catch (error) {
+          console.log("Método 1 falhou:", error);
+        }
+      }
+
+      // Método 2: Do provider global
+      if (!userAddress && (window as any).ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider((window as any).ethereum);
+          const globalSigner = await provider.getSigner();
+          userAddress = await globalSigner.getAddress();
+          console.log("Método 2 - Endereço do usuário:", userAddress);
+        } catch (error) {
+          console.log("Método 2 falhou:", error);
+        }
+      }
+
+      if (!userAddress) {
+        console.log("Não foi possível obter o endereço do usuário");
+        setIsOwner(false);
+        return;
+      }
+
+      console.log("Endereço final do usuário:", userAddress);
+      console.log("São iguais?", ownerAddress.toLowerCase() === userAddress.toLowerCase());
+
+      setIsOwner(ownerAddress.toLowerCase() === userAddress.toLowerCase());
+    } catch (error) {
+      console.error("Erro ao verificar owner:", error);
+      setIsOwner(false);
+    }
+  };
+
+  // Função para mint TokenA
+  const mintTokenA = async () => {
+    if (!mintAmountA || parseFloat(mintAmountA) <= 0) {
+      mostrarToastAviso("Insira um valor válido para mint!", 'warning');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Obter signer de forma robusta
+      let signer = null;
+      if (contract && contract.signer) {
+        try {
+          signer = await contract.signer;
+        } catch (error) {
+          console.log("Erro ao obter signer do contrato:", error);
+        }
+      }
+
+      if (!signer && (window as any).ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider((window as any).ethereum);
+          signer = await provider.getSigner();
+        } catch (error) {
+          console.log("Erro ao obter signer do provider:", error);
+        }
+      }
+
+      if (!signer) {
+        mostrarToastAviso("Não foi possível obter o signer", 'error');
+        setLoading(false);
+        return;
+      }
+
+      const tokenA = new ethers.Contract(TOKEN_A_ADDRESS, tokenAAbiJson, signer);
+      const address = await signer.getAddress();
+
+      console.log("Mintando TokenA:", mintAmountA, "para endereço:", address);
+      const tx = await tokenA.mint(address, ethers.parseUnits(mintAmountA, 18));
+      mostrarToastAviso(`Mintando TokenA... Hash: ${tx.hash}`, 'info');
+      await tx.wait();
+      mostrarToastAviso("TokenA mintado com sucesso!", 'success');
+
+      // Atualizar saldos
+      await checkBalances(signer);
+    } catch (err: any) {
+      console.error("Erro ao mintar TokenA:", err);
+      mostrarToastAviso("Erro ao mintar TokenA: " + (err.message || "Erro desconhecido"), 'error');
+    }
+    setLoading(false);
+  };
+
+  // Função para mint TokenB
+  const mintTokenB = async () => {
+    if (!mintAmountB || parseFloat(mintAmountB) <= 0) {
+      mostrarToastAviso("Insira um valor válido para mint!", 'warning');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Obter signer de forma robusta
+      let signer = null;
+      if (contract && contract.signer) {
+        try {
+          signer = await contract.signer;
+        } catch (error) {
+          console.log("Erro ao obter signer do contrato:", error);
+        }
+      }
+
+      if (!signer && (window as any).ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider((window as any).ethereum);
+          signer = await provider.getSigner();
+        } catch (error) {
+          console.log("Erro ao obter signer do provider:", error);
+        }
+      }
+
+      if (!signer) {
+        mostrarToastAviso("Não foi possível obter o signer", 'error');
+        setLoading(false);
+        return;
+      }
+
+      const tokenB = new ethers.Contract(TOKEN_B_ADDRESS, tokenBAbiJson, signer);
+      const address = await signer.getAddress();
+
+      console.log("Mintando TokenB:", mintAmountB, "para endereço:", address);
+      const tx = await tokenB.mint(address, ethers.parseUnits(mintAmountB, 18));
+      mostrarToastAviso(`Mintando TokenB... Hash: ${tx.hash}`, 'info');
+      await tx.wait();
+      mostrarToastAviso("TokenB mintado com sucesso!", 'success');
+
+      // Atualizar saldos
+      await checkBalances(signer);
+    } catch (err: any) {
+      console.error("Erro ao mintar TokenB:", err);
+      mostrarToastAviso("Erro ao mintar TokenB: " + (err.message || "Erro desconhecido"), 'error');
+    }
+    setLoading(false);
+  };
+
+  // Função para burn TokenA
+  const burnTokenA = async () => {
+    if (!burnAmountA || parseFloat(burnAmountA) <= 0) {
+      mostrarToastAviso("Insira um valor válido para burn!", 'warning');
+      return;
+    }
+
+    const burnAmountFloat = parseFloat(burnAmountA);
+    const balanceAFloat = parseFloat(tokenABalance);
+
+    if (burnAmountFloat > balanceAFloat) {
+      mostrarToastAviso(`Saldo insuficiente de TokenA. Disponível: ${tokenABalance}`, 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Obter signer de forma robusta
+      let signer = null;
+      if (contract && contract.signer) {
+        try {
+          signer = await contract.signer;
+        } catch (error) {
+          console.log("Erro ao obter signer do contrato:", error);
+        }
+      }
+
+      if (!signer && (window as any).ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider((window as any).ethereum);
+          signer = await provider.getSigner();
+        } catch (error) {
+          console.log("Erro ao obter signer do provider:", error);
+        }
+      }
+
+      if (!signer) {
+        mostrarToastAviso("Não foi possível obter o signer", 'error');
+        setLoading(false);
+        return;
+      }
+
+      const tokenA = new ethers.Contract(TOKEN_A_ADDRESS, tokenAAbiJson, signer);
+
+      const tx = await tokenA.burn(ethers.parseUnits(burnAmountA, 18));
+      mostrarToastAviso(`Queimando TokenA... Hash: ${tx.hash}`, 'info');
+      await tx.wait();
+      mostrarToastAviso("TokenA queimado com sucesso!", 'success');
+
+      // Atualizar saldos
+      await checkBalances(signer);
+    } catch (err: any) {
+      mostrarToastAviso("Erro ao queimar TokenA: " + (err.message || "Erro desconhecido"), 'error');
+    }
+    setLoading(false);
+  };
+
+  // Função para burn TokenB
+  const burnTokenB = async () => {
+    if (!burnAmountB || parseFloat(burnAmountB) <= 0) {
+      mostrarToastAviso("Insira um valor válido para burn!", 'warning');
+      return;
+    }
+
+    const burnAmountFloat = parseFloat(burnAmountB);
+    const balanceBFloat = parseFloat(tokenBBalance);
+
+    if (burnAmountFloat > balanceBFloat) {
+      mostrarToastAviso(`Saldo insuficiente de TokenB. Disponível: ${tokenBBalance}`, 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Obter signer de forma robusta
+      let signer = null;
+      if (contract && contract.signer) {
+        try {
+          signer = await contract.signer;
+        } catch (error) {
+          console.log("Erro ao obter signer do contrato:", error);
+        }
+      }
+
+      if (!signer && (window as any).ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider((window as any).ethereum);
+          signer = await provider.getSigner();
+        } catch (error) {
+          console.log("Erro ao obter signer do provider:", error);
+        }
+      }
+
+      if (!signer) {
+        mostrarToastAviso("Não foi possível obter o signer", 'error');
+        setLoading(false);
+        return;
+      }
+
+      const tokenB = new ethers.Contract(TOKEN_B_ADDRESS, tokenBAbiJson, signer);
+
+      const tx = await tokenB.burn(ethers.parseUnits(burnAmountB, 18));
+      mostrarToastAviso(`Queimando TokenB... Hash: ${tx.hash}`, 'info');
+      await tx.wait();
+      mostrarToastAviso("TokenB queimado com sucesso!", 'success');
+
+      // Atualizar saldos
+      await checkBalances(signer);
+    } catch (err: any) {
+      mostrarToastAviso("Erro ao queimar TokenB: " + (err.message || "Erro desconhecido"), 'error');
+    }
+    setLoading(false);
+  };
+
+  // Carrega o conteúdo dos contratos Solidity
+  useEffect(() => {
+    const base = import.meta.env.BASE_URL || '/';
+    fetch(base + 'SimpleDEX.sol')
+      .then(res => res.text())
+      .then(text => setSimpleDexCode(text))
+      .catch(() => setSimpleDexCode('// Erro ao carregar SimpleDEX.sol'));
+    fetch(base + 'TokenA.sol')
+      .then(res => res.text())
+      .then(text => setTokenACode(text))
+      .catch(() => setTokenACode('// Erro ao carregar TokenA.sol'));
+    fetch(base + 'TokenB.sol')
+      .then(res => res.text())
+      .then(text => setTokenBCode(text))
+      .catch(() => setTokenBCode('// Erro ao carregar TokenB.sol'));
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -96,13 +404,46 @@ const SimpleDex: React.FC = () => {
         await eth.request({ method: "eth_requestAccounts" });
         const _provider = new ethers.BrowserProvider(eth);
         const _signer = await _provider.getSigner();
+
+        // Verificar se está na rede Sepolia
+        const network = await _provider.getNetwork();
+        if (network.chainId !== 11155111n) {
+          throw new Error('Conecte à rede Sepolia!');
+        }
+
+        // Verificar se o contrato existe na rede
+        const contractCode = await _provider.getCode(SIMPLE_DEX_ADDRESS);
+        if (contractCode === '0x') {
+          throw new Error('Contrato não encontrado na rede Sepolia!');
+        }
+
         const _contract = new ethers.Contract(SIMPLE_DEX_ADDRESS, simpleDexAbi, _signer);
+
+        console.log("Contrato inicializado:", _contract);
+        console.log("Endereço do contrato:", SIMPLE_DEX_ADDRESS);
+        console.log("Código do contrato existe:", contractCode !== '0x');
+        console.log("Signer:", _signer);
+        console.log("Signer tem getAddress?", typeof _signer.getAddress === 'function');
+
+        const userAddress = await _signer.getAddress();
+        console.log("Usuário conectado:", userAddress);
+
         setContract(_contract);
         setConnected(true);
-        setStatusMsg("Carteira conectada!");
+        setStatusMsg(`Carteira conectada! Endereço: ${userAddress}`);
         setShowStatus(true);
+
+        console.log("Estado do contrato salvo:", _contract);
+        console.log("Contrato tem signer?", _contract.signer);
+
+        // Verificar saldos e reservas
+        await checkBalances(_signer);
+        await checkReserves();
+        await checkOwner();
+
         setLoading(false);
       } catch (error: any) {
+        console.error("Erro na inicialização:", error);
         setLoading(false);
         setStatusMsg(error.message || "Erro ao conectar");
         setShowStatus(true);
@@ -112,109 +453,279 @@ const SimpleDex: React.FC = () => {
   }, []);
 
   const adicionarLiquidez = async () => {
-    setLogLiq("");
     if (!contract) {
-      setLogLiq("Conecte sua carteira!");
+      mostrarToastAviso("Conecte sua carteira!", 'error');
+      return;
+    }
+    if (!isOwner) {
+      mostrarToastAviso("Apenas o proprietário do contrato pode adicionar liquidez!", 'error');
       return;
     }
     if (!amountA || !amountB || parseFloat(amountA) <= 0 || parseFloat(amountB) <= 0) {
-      setLogLiq("Insira valores válidos!");
+      mostrarToastAviso("Insira valores válidos para ambos os tokens!", 'warning');
       return;
     }
+
+    // Verificar se tem saldo suficiente
+    const amountAFloat = parseFloat(amountA);
+    const amountBFloat = parseFloat(amountB);
+    const balanceAFloat = parseFloat(tokenABalance);
+    const balanceBFloat = parseFloat(tokenBBalance);
+
+    if (amountAFloat > balanceAFloat) {
+      mostrarToastAviso(`Saldo insuficiente de TokenA. Disponível: ${tokenABalance}`, 'error');
+      return;
+    }
+    if (amountBFloat > balanceBFloat) {
+      mostrarToastAviso(`Saldo insuficiente de TokenB. Disponível: ${tokenBBalance}`, 'error');
+      return;
+    }
+
     setLoading(true);
     try {
       const tx = await contract.addLiquidity(
         ethers.parseUnits(amountA, 18),
         ethers.parseUnits(amountB, 18)
       );
-      setLogLiq(`Depósito em processamento... Hash: ${tx.hash}`);
+      mostrarToastAviso(`Adicionando liquidez... Hash: ${tx.hash}`, 'info');
       await tx.wait();
-      setLogLiq("Liquidez adicionada!");
+      mostrarToastAviso("Liquidez adicionada com sucesso!", 'success');
+
+      // Atualizar saldos e reservas
+      let signer = null;
+      if (contract && contract.signer) {
+        try {
+          signer = await contract.signer;
+        } catch (error) {
+          console.log("Erro ao obter signer do contrato:", error);
+        }
+      }
+
+      if (!signer && (window as any).ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider((window as any).ethereum);
+          signer = await provider.getSigner();
+        } catch (error) {
+          console.log("Erro ao obter signer do provider:", error);
+        }
+      }
+
+      if (signer) {
+        await checkBalances(signer);
+      }
+      await checkReserves();
     } catch (err: any) {
-      setLogLiq("Erro ao adicionar liquidez: " + (err.message || "Erro desconhecido"));
+      mostrarToastAviso("Erro ao adicionar liquidez: " + (err.message || "Erro desconhecido"), 'error');
     }
     setLoading(false);
   };
 
-
   const removerLiquidez = async () => {
-    setLogRemove("");
     if (!contract) {
-      setLogRemove("Conecte sua carteira!");
+      mostrarToastAviso("Conecte sua carteira!", 'error');
+      return;
+    }
+    if (!isOwner) {
+      mostrarToastAviso("Apenas o proprietário do contrato pode remover liquidez!", 'error');
       return;
     }
     if (!amountARemove || !amountBRemove || parseFloat(amountARemove) <= 0 || parseFloat(amountBRemove) <= 0) {
-      setLogRemove("Insira valores válidos!");
+      mostrarToastAviso("Insira valores válidos para ambos os tokens!", 'warning');
       return;
     }
+
+    // Verificar se há reservas suficientes
+    const amountARemoveFloat = parseFloat(amountARemove);
+    const amountBRemoveFloat = parseFloat(amountBRemove);
+    const reserveAFloat = parseFloat(reserveA);
+    const reserveBFloat = parseFloat(reserveB);
+
+    if (amountARemoveFloat > reserveAFloat) {
+      mostrarToastAviso(`Reserva insuficiente de TokenA. Disponível: ${reserveA}`, 'error');
+      return;
+    }
+    if (amountBRemoveFloat > reserveBFloat) {
+      mostrarToastAviso(`Reserva insuficiente de TokenB. Disponível: ${reserveB}`, 'error');
+      return;
+    }
+
     setLoading(true);
     try {
       const tx = await contract.removeLiquidity(
         ethers.parseUnits(amountARemove, 18),
         ethers.parseUnits(amountBRemove, 18)
       );
-      setLogRemove(`Remoção em processamento... Hash: ${tx.hash}`);
+      mostrarToastAviso(`Removendo liquidez... Hash: ${tx.hash}`, 'info');
       await tx.wait();
-      setLogRemove("Liquidez removida!");
+      mostrarToastAviso("Liquidez removida com sucesso!", 'success');
+
+      // Atualizar saldos e reservas
+      let signer = null;
+      if (contract && contract.signer) {
+        try {
+          signer = await contract.signer;
+        } catch (error) {
+          console.log("Erro ao obter signer do contrato:", error);
+        }
+      }
+
+      if (!signer && (window as any).ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider((window as any).ethereum);
+          signer = await provider.getSigner();
+        } catch (error) {
+          console.log("Erro ao obter signer do provider:", error);
+        }
+      }
+
+      if (signer) {
+        await checkBalances(signer);
+      }
+      await checkReserves();
     } catch (err: any) {
-      setLogRemove("Erro ao remover liquidez: " + (err.message || "Erro desconhecido"));
+      mostrarToastAviso("Erro ao remover liquidez: " + (err.message || "Erro desconhecido"), 'error');
     }
     setLoading(false);
   };
 
   const swapAforB = async () => {
     if (!contract) {
-      setResultado("Conecte sua carteira!");
+      mostrarToastAviso("Conecte sua carteira!", 'error');
       return;
     }
     if (!amountAIn || parseFloat(amountAIn) <= 0) {
-      setResultado("Insira um valor válido!");
+      mostrarToastAviso("Insira um valor válido para TokenA!", 'warning');
       return;
     }
+
+    // Verificar se tem saldo suficiente
+    const amountAInFloat = parseFloat(amountAIn);
+    const balanceAFloat = parseFloat(tokenABalance);
+
+    if (amountAInFloat > balanceAFloat) {
+      mostrarToastAviso(`Saldo insuficiente de TokenA. Disponível: ${tokenABalance}`, 'error');
+      return;
+    }
+
+    // Verificar se há liquidez suficiente
+    if (parseFloat(reserveB) <= 0) {
+      mostrarToastAviso("Não há liquidez suficiente para realizar o swap!", 'warning');
+      return;
+    }
+
     setLoading(true);
     try {
       const tx = await contract.swapAforB(ethers.parseUnits(amountAIn, 18));
-      setResultado(`Swap em processamento... Hash: ${tx.hash}`);
+      mostrarToastAviso(`Realizando swap A por B... Hash: ${tx.hash}`, 'info');
       await tx.wait();
-      setResultado("Swap A por B realizado!");
+      mostrarToastAviso("Swap A por B realizado com sucesso!", 'success');
+
+      // Atualizar saldos e reservas
+      let signer = null;
+      if (contract && contract.signer) {
+        try {
+          signer = await contract.signer;
+        } catch (error) {
+          console.log("Erro ao obter signer do contrato:", error);
+        }
+      }
+
+      if (!signer && (window as any).ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider((window as any).ethereum);
+          signer = await provider.getSigner();
+        } catch (error) {
+          console.log("Erro ao obter signer do provider:", error);
+        }
+      }
+
+      if (signer) {
+        await checkBalances(signer);
+      }
+      await checkReserves();
     } catch (err: any) {
-      setResultado("Erro no swap: " + (err.message || "Erro desconhecido"));
+      mostrarToastAviso("Erro no swap: " + (err.message || "Erro desconhecido"), 'error');
     }
     setLoading(false);
   };
 
   const swapBforA = async () => {
     if (!contract) {
-      setResultado("Conecte sua carteira!");
+      mostrarToastAviso("Conecte sua carteira!", 'error');
       return;
     }
     if (!amountBIn || parseFloat(amountBIn) <= 0) {
-      setResultado("Insira um valor válido!");
+      mostrarToastAviso("Insira um valor válido para TokenB!", 'warning');
       return;
     }
+
+    // Verificar se tem saldo suficiente
+    const amountBInFloat = parseFloat(amountBIn);
+    const balanceBFloat = parseFloat(tokenBBalance);
+
+    if (amountBInFloat > balanceBFloat) {
+      mostrarToastAviso(`Saldo insuficiente de TokenB. Disponível: ${tokenBBalance}`, 'error');
+      return;
+    }
+
+    // Verificar se há liquidez suficiente
+    if (parseFloat(reserveA) <= 0) {
+      mostrarToastAviso("Não há liquidez suficiente para realizar o swap!", 'warning');
+      return;
+    }
+
     setLoading(true);
     try {
       const tx = await contract.swapBforA(ethers.parseUnits(amountBIn, 18));
-      setResultado(`Swap em processamento... Hash: ${tx.hash}`);
+      mostrarToastAviso(`Realizando swap B por A... Hash: ${tx.hash}`, 'info');
       await tx.wait();
-      setResultado("Swap B por A realizado!");
+      mostrarToastAviso("Swap B por A realizado com sucesso!", 'success');
+
+      // Atualizar saldos e reservas
+      let signer = null;
+      if (contract && contract.signer) {
+        try {
+          signer = await contract.signer;
+        } catch (error) {
+          console.log("Erro ao obter signer do contrato:", error);
+        }
+      }
+
+      if (!signer && (window as any).ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider((window as any).ethereum);
+          signer = await provider.getSigner();
+        } catch (error) {
+          console.log("Erro ao obter signer do provider:", error);
+        }
+      }
+
+      if (signer) {
+        await checkBalances(signer);
+      }
+      await checkReserves();
     } catch (err: any) {
-      setResultado("Erro no swap: " + (err.message || "Erro desconhecido"));
+      mostrarToastAviso("Erro no swap: " + (err.message || "Erro desconhecido"), 'error');
     }
     setLoading(false);
   };
 
   const verPreco = async (tokenAddress: string) => {
     if (!contract) {
-      setResultado("Conecte sua carteira!");
+      mostrarToastAviso("Conecte sua carteira!", 'error');
       return;
     }
     setLoading(true);
     try {
       const price = await contract.getPrice(tokenAddress);
-      setResultado(`Preço: ${ethers.formatUnits(price, 18)}`);
+      const tokenName = tokenAddress === TOKEN_A_ADDRESS ? "TokenA" : "TokenB";
+      mostrarToastAviso(`Preço do ${tokenName}: ${ethers.formatUnits(price, 18)}`, 'info');
     } catch (err: any) {
-      setResultado("Erro ao consultar preço: " + (err.message || "Erro desconhecido"));
+      if (err.message && err.message.includes("No liquidity")) {
+        mostrarToastAviso("Não há liquidez suficiente para calcular o preço. Adicione liquidez primeiro.", 'warning');
+      } else {
+        mostrarToastAviso("Erro ao consultar preço: " + (err.message || "Erro desconhecido"), 'error');
+      }
     }
     setLoading(false);
   };
@@ -222,9 +733,11 @@ const SimpleDex: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-blue-950 to-purple-950 text-white flex flex-col">
       <main className="flex-1 flex items-center justify-center py-5 px-2">
-        <div className="max-w-3xl w-full mx-auto bg-gray-800/80 p-8 rounded-xl shadow-lg">
+        <div className="max-w-6xl w-full mx-auto bg-gray-800/80 p-8 rounded-xl shadow-lg">
           <h1 className="text-center mb-2 text-4xl font-bold text-white">🔄 SimpleDEX</h1>
-          <p className="text-center mb-8 italic text-gray-200">Troque tokens e gerencie liquidez de forma descentralizada</p>
+          <p className="text-center mb-8 italic text-gray-200">Exchange Descentralizada com Pools de Liquidez</p>
+
+          {/* Informações dos Contratos */}
           <div className="contract-info bg-gray-900/80 p-5 rounded-xl mb-8 text-center text-sm break-words text-gray-100">
             <strong className="text-white">Endereços dos Contratos:</strong><br />
             <div className="my-2 flex flex-col items-center">
@@ -240,7 +753,7 @@ const SimpleDex: React.FC = () => {
                   {SIMPLE_DEX_ADDRESS}
                 </a>
                 <button
-                  className="ml-1 px-2 py-1 bg-blue-700 text-white rounded hover:bg-blue-900 text-xs font-semibold"
+                  className="ml-1 px-2 py-1 bg-blue-700 text-white rounded hover:bg-blue-900 active:bg-blue-950 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
                   onClick={() => handleCopy(SIMPLE_DEX_ADDRESS)}
                   title="Copiar endereço"
                 >
@@ -261,7 +774,7 @@ const SimpleDex: React.FC = () => {
                   {TOKEN_A_ADDRESS}
                 </a>
                 <button
-                  className="ml-1 px-2 py-1 bg-green-700 text-white rounded hover:bg-green-900 text-xs font-semibold"
+                  className="ml-1 px-2 py-1 bg-green-700 text-white rounded hover:bg-green-900 active:bg-green-950 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
                   onClick={() => handleCopy(TOKEN_A_ADDRESS)}
                   title="Copiar endereço"
                 >
@@ -282,7 +795,7 @@ const SimpleDex: React.FC = () => {
                   {TOKEN_B_ADDRESS}
                 </a>
                 <button
-                  className="ml-1 px-2 py-1 bg-purple-700 text-white rounded hover:bg-purple-900 text-xs font-semibold"
+                  className="ml-1 px-2 py-1 bg-purple-700 text-white rounded hover:bg-purple-900 active:bg-purple-950 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
                   onClick={() => handleCopy(TOKEN_B_ADDRESS)}
                   title="Copiar endereço"
                 >
@@ -290,75 +803,237 @@ const SimpleDex: React.FC = () => {
                 </button>
               </div>
             </div>
-            <div className="text-xs mt-1 text-gray-300">(Clique para visualizar ou copiar no Etherscan)</div>
+            <div className="text-xs mt-1 text-gray-300">(Clique para visualizar no Etherscan)</div>
           </div>
 
+          {/* Status da Conexão */}
           <div className="section bg-gray-800/80 border-2 border-gray-700 rounded-xl p-6 mb-6 text-gray-100">
-            <h2 className="mb-5 pb-2 border-b-4 border-blue-500 text-xl font-semibold text-white">🔗 Conectar Carteira</h2>
+            <h2 className="mb-5 pb-2 border-b-4 border-blue-500 text-xl font-semibold text-white">🔗 Status da Conexão</h2>
             <div className="flex flex-col gap-2">
               <div className={`status font-semibold p-4 rounded-lg ${connected ? 'bg-green-100 text-green-800 border-2 border-green-200' : 'bg-red-100 text-red-800 border-2 border-red-200'}`} style={{ display: showStatus ? 'block' : 'none' }}>
                 {statusMsg}
               </div>
+              {connected && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="bg-gray-900/80 p-4 rounded-xl">
+                    <h3 className="text-green-400 font-semibold mb-2">Seus Saldos:</h3>
+                    <p className="text-sm">TokenA: <span className="text-green-300">{parseFloat(tokenABalance).toFixed(4)}</span></p>
+                    <p className="text-sm">TokenB: <span className="text-purple-300">{parseFloat(tokenBBalance).toFixed(4)}</span></p>
+                  </div>
+                  <div className="bg-gray-900/80 p-4 rounded-xl">
+                    <h3 className="text-blue-400 font-semibold mb-2">Reservas do DEX:</h3>
+                    <p className="text-sm">TokenA: <span className="text-green-300">{parseFloat(reserveA).toFixed(4)}</span></p>
+                    <p className="text-sm">TokenB: <span className="text-purple-300">{parseFloat(reserveB).toFixed(4)}</span></p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Gestão de Tokens (Mint/Burn) */}
           <div className="section bg-gray-800/80 border-2 border-gray-700 rounded-xl p-6 mb-6 text-gray-100">
-            <h2 className="mb-5 pb-2 border-b-4 border-purple-500 text-xl font-semibold text-white">💼 Liquidez</h2>
-            <div className="mb-6 flex flex-row gap-6 justify-center items-center">
-              {/* Aprovar TokenA */}
-              <div className="flex flex-col gap-2 bg-gray-900/80 p-4 rounded-xl border border-green-700 min-w-[260px] max-w-xs w-full">
-                <h3 className="mb-2 text-lg font-semibold text-green-400">Aprovar TokenA</h3>
-                <NumericFormat
-                  value={amountAApprove}
-                  onValueChange={(values: NumberFormatValues) => setAmountAApprove(values.value)}
-                  thousandSeparator={false}
-                  decimalScale={18}
-                  allowNegative={false}
-                  placeholder="Valor para aprovar TokenA"
-                  className="w-full py-2 px-4 border-2 border-gray-700 rounded-lg text-base text-gray-100 bg-gray-900"
-                  disabled={aprovando || loading}
-                />
-                <button
-                  className={`bg-gradient-to-r from-green-500 to-green-700 text-white border-none py-2 px-4 rounded-lg text-base font-semibold transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${aprovando ? 'opacity-60 cursor-not-allowed' : ''}`}
-                  onClick={() => aprovarTokenA(amountAApprove)}
-                  disabled={aprovando || loading || !amountAApprove || parseFloat(amountAApprove) <= 0}
-                >
-                  {aprovando ? 'Aprovando...' : 'Aprovar TokenA'}
-                </button>
-                <div className={`status font-semibold p-2 rounded-lg text-xs mt-2 ${logA.includes('Erro') ? 'bg-red-100 text-red-800 border-2 border-red-200' : logA ? 'bg-gray-900 text-white border-2 border-gray-700' : ''}`} style={{ display: logA ? 'block' : 'none' }}>
-                  {logA}
+            <h2 className="mb-5 pb-2 border-b-4 border-orange-500 text-xl font-semibold text-white">🪙 Gestão de Tokens</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Mint Tokens */}
+              <div className="bg-gray-900/80 p-4 rounded-xl border border-orange-700">
+                <h3 className="mb-3 text-lg font-semibold text-orange-400">Mint Tokens</h3>
+
+                {/* Mint TokenA */}
+                <div className="mb-4">
+                  <h4 className="text-green-400 font-semibold mb-2">Mint TokenA:</h4>
+                  <NumericFormat
+                    value={mintAmountA}
+                    onValueChange={(values: NumberFormatValues) => setMintAmountA(values.value)}
+                    thousandSeparator={false}
+                    decimalScale={18}
+                    allowNegative={false}
+                    placeholder="Quantidade para mintar"
+                    className="w-full py-2 px-4 border-2 border-gray-700 rounded-lg text-base text-gray-100 bg-gray-900 mb-2"
+                    disabled={loading}
+                  />
+                  <button
+                    className={`bg-gradient-to-r from-green-500 to-green-700 text-white border-none py-2 px-4 rounded-lg text-sm font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 ${loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:from-green-600 hover:to-green-800'}`}
+                    onClick={mintTokenA}
+                    disabled={loading}
+                  >
+                    {loading ? 'Processando...' : 'Mint TokenA'}
+                  </button>
+                </div>
+
+                {/* Mint TokenB */}
+                <div>
+                  <h4 className="text-purple-400 font-semibold mb-2">Mint TokenB:</h4>
+                  <NumericFormat
+                    value={mintAmountB}
+                    onValueChange={(values: NumberFormatValues) => setMintAmountB(values.value)}
+                    thousandSeparator={false}
+                    decimalScale={18}
+                    allowNegative={false}
+                    placeholder="Quantidade para mintar"
+                    className="w-full py-2 px-4 border-2 border-gray-700 rounded-lg text-base text-gray-100 bg-gray-900 mb-2"
+                    disabled={loading}
+                  />
+                  <button
+                    className={`bg-gradient-to-r from-purple-500 to-purple-700 text-white border-none py-2 px-4 rounded-lg text-sm font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 ${loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:from-purple-600 hover:to-purple-800'}`}
+                    onClick={mintTokenB}
+                    disabled={loading}
+                  >
+                    {loading ? 'Processando...' : 'Mint TokenB'}
+                  </button>
                 </div>
               </div>
 
-              {/* Aprovar TokenB */}
-              <div className="flex flex-col gap-2 bg-gray-900/80 p-4 rounded-xl border border-purple-700 min-w-[260px] max-w-xs w-full">
-                <h3 className="mb-2 text-lg font-semibold text-purple-400">Aprovar TokenB</h3>
-                <NumericFormat
-                  value={amountBApprove}
-                  onValueChange={(values: NumberFormatValues) => setAmountBApprove(values.value)}
-                  thousandSeparator={false}
-                  decimalScale={18}
-                  allowNegative={false}
-                  placeholder="Valor para aprovar TokenB"
-                  className="w-full py-2 px-4 border-2 border-gray-700 rounded-lg text-base text-gray-100 bg-gray-900"
-                  disabled={aprovando || loading}
-                />
-                <button
-                  className={`bg-gradient-to-r from-purple-500 to-purple-700 text-white border-none py-2 px-4 rounded-lg text-base font-semibold transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${aprovando ? 'opacity-60 cursor-not-allowed' : ''}`}
-                  onClick={() => aprovarTokenB(amountBApprove)}
-                  disabled={aprovando || loading || !amountBApprove || parseFloat(amountBApprove) <= 0}
-                >
-                  {aprovando ? 'Aprovando...' : 'Aprovar TokenB'}
-                </button>
-                <div className={`status font-semibold p-2 rounded-lg text-xs mt-2 ${logB.includes('Erro') ? 'bg-red-100 text-red-800 border-2 border-red-200' : logB ? 'bg-gray-900 text-white border-2 border-gray-700' : ''}`} style={{ display: logB ? 'block' : 'none' }}>
-                  {logB}
+              {/* Burn Tokens */}
+              <div className="bg-gray-900/80 p-4 rounded-xl border border-red-700">
+                <h3 className="mb-3 text-lg font-semibold text-red-400">Burn Tokens</h3>
+
+                {/* Burn TokenA */}
+                <div className="mb-4">
+                  <h4 className="text-green-400 font-semibold mb-2">Burn TokenA:</h4>
+                  <NumericFormat
+                    value={burnAmountA}
+                    onValueChange={(values: NumberFormatValues) => setBurnAmountA(values.value)}
+                    thousandSeparator={false}
+                    decimalScale={18}
+                    allowNegative={false}
+                    placeholder="Quantidade para queimar"
+                    className="w-full py-2 px-4 border-2 border-gray-700 rounded-lg text-base text-gray-100 bg-gray-900 mb-2"
+                    disabled={loading}
+                  />
+                  <button
+                    className={`bg-gradient-to-r from-red-500 to-red-700 text-white border-none py-2 px-4 rounded-lg text-sm font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 ${loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:from-red-600 hover:to-red-800'}`}
+                    onClick={burnTokenA}
+                    disabled={loading}
+                  >
+                    {loading ? 'Processando...' : 'Burn TokenA'}
+                  </button>
+                </div>
+
+                {/* Burn TokenB */}
+                <div>
+                  <h4 className="text-purple-400 font-semibold mb-2">Burn TokenB:</h4>
+                  <NumericFormat
+                    value={burnAmountB}
+                    onValueChange={(values: NumberFormatValues) => setBurnAmountB(values.value)}
+                    thousandSeparator={false}
+                    decimalScale={18}
+                    allowNegative={false}
+                    placeholder="Quantidade para queimar"
+                    className="w-full py-2 px-4 border-2 border-gray-700 rounded-lg text-base text-gray-100 bg-gray-900 mb-2"
+                    disabled={loading}
+                  />
+                  <button
+                    className={`bg-gradient-to-r from-red-500 to-red-700 text-white border-none py-2 px-4 rounded-lg text-sm font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 ${loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:from-red-600 hover:to-red-800'}`}
+                    onClick={burnTokenB}
+                    disabled={loading}
+                  >
+                    {loading ? 'Processando...' : 'Burn TokenB'}
+                  </button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Gestão de Liquidez */}
+          <div className="section bg-gray-800/80 border-2 border-gray-700 rounded-xl p-6 mb-6 text-gray-100">
+            <h2 className="mb-5 pb-2 border-b-4 border-purple-500 text-xl font-semibold text-white">💼 Gestão de Liquidez</h2>
+
+            {/* Informações sobre permissões */}
+            <div className="mb-6 p-4 bg-blue-900/30 border border-blue-700 rounded-lg">
+              <h3 className="text-blue-300 font-semibold mb-2">📋 Regras de Permissão:</h3>
+              <ul className="text-sm text-gray-200 space-y-1">
+                <li>• <span className="text-yellow-300">Adicionar Liquidez:</span> Apenas o proprietário do contrato</li>
+                <li>• <span className="text-green-300">Trocar Tokens:</span> Todos os usuários podem trocar</li>
+                <li>• <span className="text-red-300">Retirar Liquidez:</span> Apenas o proprietário do contrato</li>
+              </ul>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-sm text-gray-300">Status Owner:</span>
+                <span className={`text-sm font-semibold ${isOwner ? 'text-green-400' : 'text-red-400'}`}>
+                  {isOwner ? '✅ É Owner' : '❌ Não é Owner'}
+                </span>
+                <button
+                  className="ml-2 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 cursor-pointer"
+                  onClick={async () => {
+                    try {
+                      console.log("=== TESTE DE VERIFICAÇÃO DE OWNER ===");
+                      if (!contract) {
+                        console.log("Contrato não disponível");
+                        mostrarToastAviso("Contrato não disponível", 'error');
+                        return;
+                      }
+
+                      const ownerAddress = await contract.owner();
+                      console.log("Owner do contrato:", ownerAddress);
+
+                      // Tentar obter o signer de diferentes formas
+                      let userAddress = null;
+
+                      // Método 1: Direto do contrato
+                      if (contract.signer) {
+                        try {
+                          const signer = await contract.signer;
+                          if (signer && typeof signer.getAddress === 'function') {
+                            userAddress = await signer.getAddress();
+                            console.log("Método 1 - Endereço do usuário:", userAddress);
+                          }
+                        } catch (error) {
+                          console.log("Método 1 falhou:", error);
+                        }
+                      }
+
+                      // Método 2: Do provider global
+                      if (!userAddress && (window as any).ethereum) {
+                        try {
+                          const provider = new ethers.BrowserProvider((window as any).ethereum);
+                          const globalSigner = await provider.getSigner();
+                          userAddress = await globalSigner.getAddress();
+                          console.log("Método 2 - Endereço do usuário:", userAddress);
+                        } catch (error) {
+                          console.log("Método 2 falhou:", error);
+                        }
+                      }
+
+                      if (!userAddress) {
+                        console.log("Não foi possível obter o endereço do usuário");
+                        mostrarToastAviso("Não foi possível obter o endereço do usuário", 'error');
+                        return;
+                      }
+
+                      console.log("Endereço final do usuário:", userAddress);
+                      console.log("São iguais?", ownerAddress.toLowerCase() === userAddress.toLowerCase());
+
+                      const isOwnerResult = ownerAddress.toLowerCase() === userAddress.toLowerCase();
+                      setIsOwner(isOwnerResult);
+                      mostrarToastAviso(`Owner: ${ownerAddress}, Usuário: ${userAddress}, É Owner: ${isOwnerResult}`, 'info');
+                    } catch (error: any) {
+                      console.error("Erro no teste:", error);
+                      mostrarToastAviso("Erro ao verificar owner: " + (error.message || "Erro desconhecido"), 'error');
+                    }
+                  }}
+                >
+                  🔄 Verificar
+                </button>
+              </div>
+              {isOwner && (
+                <div className="mt-3 p-2 bg-green-900/30 border border-green-700 rounded text-green-200 text-sm">
+                  ✅ Você é o proprietário do contrato e pode gerenciar a liquidez
+                </div>
+              )}
+              {!isOwner && (
+                <div className="mt-3 p-2 bg-yellow-900/30 border border-yellow-700 rounded text-yellow-200 text-sm">
+                  ⚠️ Você não é o proprietário. Apenas pode trocar tokens.
+                </div>
+              )}
             </div>
 
             {/* Adicionar Liquidez */}
             <div className="flex flex-col gap-2 bg-gray-900/80 p-4 rounded-xl border border-blue-700 mb-6">
               <h3 className="mb-2 text-lg font-semibold text-blue-400">Adicionar Liquidez</h3>
+              {!isOwner && (
+                <div className="mb-3 p-3 bg-yellow-900/50 border border-yellow-700 rounded-lg text-yellow-200 text-sm">
+                  ⚠️ Apenas o proprietário do contrato pode adicionar liquidez
+                </div>
+              )}
               <NumericFormat
                 value={amountA}
                 onValueChange={(values: NumberFormatValues) => setAmountA(values.value)}
@@ -367,8 +1042,7 @@ const SimpleDex: React.FC = () => {
                 allowNegative={false}
                 placeholder="Quantidade de TokenA"
                 className="w-full py-2 px-4 border-2 border-gray-700 rounded-lg text-base text-gray-100 bg-gray-900 mb-2"
-                disabled={loading}
-
+                disabled={loading || !isOwner}
               />
               <NumericFormat
                 value={amountB}
@@ -378,24 +1052,25 @@ const SimpleDex: React.FC = () => {
                 allowNegative={false}
                 placeholder="Quantidade de TokenB"
                 className="w-full py-2 px-4 border-2 border-gray-700 rounded-lg text-base text-gray-100 bg-gray-900 mb-2"
-                disabled={loading}
-
+                disabled={loading || !isOwner}
               />
               <button
-                className={`bg-gradient-to-r from-blue-500 to-blue-700 text-white border-none py-2 px-6 rounded-lg text-base font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`bg-gradient-to-r from-blue-500 to-blue-700 text-white border-none py-2 px-6 rounded-lg text-base font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 ${loading || !isOwner ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:from-blue-600 hover:to-blue-800'}`}
                 onClick={adicionarLiquidez}
-                disabled={loading}
+                disabled={loading || !isOwner}
               >
-                {loading ? 'Processando...' : 'Adicionar Liquidez'}
+                {loading ? 'Processando...' : !isOwner ? 'Apenas Owner' : 'Adicionar Liquidez'}
               </button>
-              <div className={`status font-semibold p-2 rounded-lg text-xs mt-2 ${logLiq.includes('Erro') ? 'bg-red-100 text-red-800 border-2 border-red-200' : logLiq ? 'bg-gray-900 text-white border-2 border-gray-700' : ''}`} style={{ display: logLiq ? 'block' : 'none' }}>
-                {logLiq}
-              </div>
             </div>
 
             {/* Remover Liquidez */}
             <div className="flex flex-col gap-2 bg-gray-900/80 p-4 rounded-xl border border-red-700">
               <h3 className="mb-2 text-lg font-semibold text-red-400">Remover Liquidez</h3>
+              {!isOwner && (
+                <div className="mb-3 p-3 bg-yellow-900/50 border border-yellow-700 rounded-lg text-yellow-200 text-sm">
+                  ⚠️ Apenas o proprietário do contrato pode remover liquidez
+                </div>
+              )}
               <NumericFormat
                 value={amountARemove}
                 onValueChange={(values: NumberFormatValues) => setAmountARemove(values.value)}
@@ -404,8 +1079,7 @@ const SimpleDex: React.FC = () => {
                 allowNegative={false}
                 placeholder="Quantidade de TokenA"
                 className="w-full py-2 px-4 border-2 border-gray-700 rounded-lg text-base text-gray-100 bg-gray-900 mb-2"
-                disabled={loading}
-
+                disabled={loading || !isOwner}
               />
               <NumericFormat
                 value={amountBRemove}
@@ -415,22 +1089,19 @@ const SimpleDex: React.FC = () => {
                 allowNegative={false}
                 placeholder="Quantidade de TokenB"
                 className="w-full py-2 px-4 border-2 border-gray-700 rounded-lg text-base text-gray-100 bg-gray-900 mb-2"
-                disabled={loading}
-
+                disabled={loading || !isOwner}
               />
               <button
-                className={`bg-gradient-to-r from-red-500 to-blue-500 text-white border-none py-2 px-6 rounded-lg text-base font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`bg-gradient-to-r from-red-500 to-red-700 text-white border-none py-2 px-6 rounded-lg text-base font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 ${loading || !isOwner ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:from-red-600 hover:to-red-800'}`}
                 onClick={removerLiquidez}
-                disabled={loading}
+                disabled={loading || !isOwner}
               >
-                {loading ? 'Processando...' : 'Remover Liquidez'}
+                {loading ? 'Processando...' : !isOwner ? 'Apenas Owner' : 'Remover Liquidez'}
               </button>
-              <div className={`status font-semibold p-2 rounded-lg text-xs mt-2 ${logRemove.includes('Erro') ? 'bg-red-100 text-red-800 border-2 border-red-200' : logRemove ? 'bg-gray-900 text-white border-2 border-gray-700' : ''}`} style={{ display: logRemove ? 'block' : 'none' }}>
-                {logRemove}
-              </div>
             </div>
           </div>
 
+          {/* Swap de Tokens */}
           <div className="section bg-gray-800/80 border-2 border-gray-700 rounded-xl p-6 mb-6 text-gray-100">
             <h2 className="mb-5 pb-2 border-b-4 border-yellow-500 text-xl font-semibold text-white">🔄 Swap de Tokens</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
@@ -445,10 +1116,9 @@ const SimpleDex: React.FC = () => {
                   placeholder="Quantidade de TokenA"
                   className="w-full py-2 px-4 border-2 border-gray-700 rounded-lg text-base text-gray-100 bg-gray-900 mb-2"
                   disabled={loading}
-
                 />
                 <button
-                  className={`bg-gradient-to-r from-yellow-400 to-purple-600 text-white border-none py-2 px-6 rounded-lg text-base font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`bg-gradient-to-r from-yellow-400 to-yellow-600 text-white border-none py-2 px-6 rounded-lg text-base font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 ${loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:from-yellow-500 hover:to-yellow-700'}`}
                   onClick={swapAforB}
                   disabled={loading}
                 >
@@ -466,10 +1136,9 @@ const SimpleDex: React.FC = () => {
                   placeholder="Quantidade de TokenB"
                   className="w-full py-2 px-4 border-2 border-gray-700 rounded-lg text-base text-gray-100 bg-gray-900 mb-2"
                   disabled={loading}
-
                 />
                 <button
-                  className={`bg-gradient-to-r from-yellow-400 to-purple-600 text-white border-none py-2 px-6 rounded-lg text-base font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`bg-gradient-to-r from-yellow-400 to-yellow-600 text-white border-none py-2 px-6 rounded-lg text-base font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 ${loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:from-yellow-500 hover:to-yellow-700'}`}
                   onClick={swapBforA}
                   disabled={loading}
                 >
@@ -479,18 +1148,19 @@ const SimpleDex: React.FC = () => {
             </div>
           </div>
 
+          {/* Consultar Preço */}
           <div className="section bg-gray-800/80 border-2 border-gray-700 rounded-xl p-6 mb-6 text-gray-100">
             <h2 className="mb-5 pb-2 border-b-4 border-green-500 text-xl font-semibold text-white">💲 Consultar Preço</h2>
             <div className="flex gap-4 justify-center mb-4">
               <button
-                className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2 rounded-lg font-semibold shadow hover:-translate-y-1 hover:shadow-lg transition-all"
+                className={`bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-2 rounded-lg font-semibold shadow hover:-translate-y-1 hover:shadow-lg transition-all active:scale-95 ${loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:from-green-600 hover:to-green-800'}`}
                 onClick={() => verPreco(TOKEN_A_ADDRESS)}
                 disabled={loading}
               >
                 Preço TokenA
               </button>
               <button
-                className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2 rounded-lg font-semibold shadow hover:-translate-y-1 hover:shadow-lg transition-all"
+                className={`bg-gradient-to-r from-purple-500 to-purple-700 text-white px-6 py-2 rounded-lg font-semibold shadow hover:-translate-y-1 hover:shadow-lg transition-all active:scale-95 ${loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:from-purple-600 hover:to-purple-800'}`}
                 onClick={() => verPreco(TOKEN_B_ADDRESS)}
                 disabled={loading}
               >
@@ -499,10 +1169,48 @@ const SimpleDex: React.FC = () => {
             </div>
           </div>
 
+
+
+          {/* Exibir código dos contratos .sol */}
           <div className="mt-8 flex flex-col items-center">
-            <div className={`status font-semibold p-4 rounded-lg ${resultado.includes('sucesso') ? 'bg-green-100 text-green-800 border-2 border-green-200' : resultado.includes('Erro') ? 'bg-red-100 text-red-800 border-2 border-red-200' : 'bg-gray-900 text-white border-2 border-gray-700'}`} style={{ display: resultado ? 'block' : 'none', minHeight: '48px' }}>
-              {resultado}
+            <div className="flex gap-4 justify-center mb-4 flex-wrap">
+              <button
+                className="mb-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-2 rounded-lg font-semibold shadow hover:-translate-y-1 hover:shadow-lg transition-all active:scale-95 cursor-pointer hover:from-purple-600 hover:to-indigo-700"
+                onClick={() => setShowSimpleDexCode(prev => !prev)}
+              >
+                {showSimpleDexCode ? 'Ocultar SimpleDEX.sol' : 'Mostrar SimpleDEX.sol'}
+              </button>
+              <button
+                className="mb-2 bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-2 rounded-lg font-semibold shadow hover:-translate-y-1 hover:shadow-lg transition-all active:scale-95 cursor-pointer hover:from-green-600 hover:to-green-800"
+                onClick={() => setShowTokenACode(prev => !prev)}
+              >
+                {showTokenACode ? 'Ocultar TokenA.sol' : 'Mostrar TokenA.sol'}
+              </button>
+              <button
+                className="mb-2 bg-gradient-to-r from-purple-500 to-purple-700 text-white px-6 py-2 rounded-lg font-semibold shadow hover:-translate-y-1 hover:shadow-lg transition-all active:scale-95 cursor-pointer hover:from-purple-600 hover:to-purple-800"
+                onClick={() => setShowTokenBCode(prev => !prev)}
+              >
+                {showTokenBCode ? 'Ocultar TokenB.sol' : 'Mostrar TokenB.sol'}
+              </button>
             </div>
+            {showSimpleDexCode && (
+              <div className="mb-6 bg-gray-900 text-blue-200 rounded-lg p-4 overflow-auto max-h-96 border-2 border-blue-700 w-full">
+                <h3 className="font-bold mb-2 text-blue-400">SimpleDEX.sol</h3>
+                <pre className="text-xs whitespace-pre-wrap">{simpleDexCode}</pre>
+              </div>
+            )}
+            {showTokenACode && (
+              <div className="mb-6 bg-gray-900 text-green-200 rounded-lg p-4 overflow-auto max-h-96 border-2 border-green-700 w-full">
+                <h3 className="font-bold mb-2 text-green-400">TokenA.sol</h3>
+                <pre className="text-xs whitespace-pre-wrap">{tokenACode}</pre>
+              </div>
+            )}
+            {showTokenBCode && (
+              <div className="mb-6 bg-gray-900 text-purple-200 rounded-lg p-4 overflow-auto max-h-96 border-2 border-purple-700 w-full">
+                <h3 className="font-bold mb-2 text-purple-400">TokenB.sol</h3>
+                <pre className="text-xs whitespace-pre-wrap">{tokenBCode}</pre>
+              </div>
+            )}
           </div>
         </div>
       </main>
