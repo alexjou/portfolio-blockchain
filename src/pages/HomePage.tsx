@@ -2,15 +2,17 @@ import { images } from '../assets/images';
 import perfil from '../assets/me.jpeg';
 import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
-import Blockchain3DDecoration from "../components/Blockchain3DDecoration";
+// import Blockchain3DDecoration from "../components/Blockchain3DDecoration";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-blue-950 to-purple-950 text-white flex flex-col relative overflow-hidden">
-      {/* Decoração 3D blockchain - esquerda */}
+      {/* Decoração 3D blockchain - esquerda 
       <Blockchain3DDecoration side="left" />
-      {/* Decoração 3D blockchain - direita */}
+      */}
+      {/* Decoração 3D blockchain - direita
       <Blockchain3DDecoration side="right" />
+       */}
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center px-4 py-20 gap-12">
         <div className="space-y-10 w-full max-w-3xl text-center">

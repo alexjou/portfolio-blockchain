@@ -20,6 +20,33 @@ const Header: React.FC = () => {
   const [walletBalance, setWalletBalance] = useState('');
   const [mobileMenu, setMobileMenu] = useState(false);
 
+  // Função para conectar carteira
+  const conectarCarteira = async () => {
+    if (!(window as any).ethereum) {
+      alert('MetaMask não encontrada. Instale a extensão para continuar.');
+      return;
+    }
+    try {
+      const eth = (window as any).ethereum;
+      const accounts = await eth.request({ method: 'eth_requestAccounts' });
+      if (accounts && accounts.length > 0) {
+        setIsConnected(true);
+        const provider = new ethers.BrowserProvider(eth);
+        const balance = await provider.getBalance(accounts[0]);
+        setWalletBalance(parseFloat(ethers.formatEther(balance)).toFixed(4) + ' ETH');
+        let ensName: string | null = '';
+        try {
+          ensName = await provider.lookupAddress(accounts[0]);
+        } catch { }
+        setWalletName((ensName ?? '') || accounts[0].slice(0, 6) + '...' + accounts[0].slice(-4));
+        // Dispara evento para atualizar outros componentes se necessário
+        window.dispatchEvent(new Event('walletUpdated'));
+      }
+    } catch (err) {
+      alert('Erro ao conectar carteira.');
+    }
+  };
+
   useEffect(() => {
     const atualizarWallet = async () => {
       if (!(window as any).ethereum) {
@@ -127,7 +154,12 @@ const Header: React.FC = () => {
               <span className="bg-green-500 h-3 w-3 rounded-full inline-block relative ml-2"></span>
             </button>
           ) : (
-            <button className="bg-gradient-to-r from-yellow-400 to-purple-700 text-white px-6 py-2 rounded-md shadow-md font-semibold">
+            <button
+              className="bg-gradient-to-r from-yellow-400 to-purple-700 text-white px-6 py-2 rounded-md shadow-md font-semibold cursor-pointer transition-transform active:scale-95 hover:brightness-110"
+              onClick={conectarCarteira}
+              type="button"
+              title="Conectar carteira Ethereum"
+            >
               Conectar Carteira
             </button>
           )}

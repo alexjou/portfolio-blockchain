@@ -10,8 +10,8 @@ import tokenAAbiJson from "./TokenA.abi.json";
 import tokenBAbiJson from "./TokenB.abi.json";
 
 const SIMPLE_DEX_ADDRESS = "0x2d8454E3AccD8177dC58e3970cB3eF98D7942746";
-const TOKEN_A_ADDRESS = "0xC45e880CFfA0953AbAc6cb405bd8e37D43b500BB";
-const TOKEN_B_ADDRESS = "0xB332Bc14E80b2E0ACd53c49e66aC8ad3410D05D4";
+const TOKEN_A_ADDRESS = "0xaCA80d00b8e1a18d512E0bC0614aB182b395f4bE";
+const TOKEN_B_ADDRESS = "0x2eBB1f90fFC07e4b34122E115e78d9cf87b80914";
 const simpleDexAbi: any[] = simpleDexAbiJson;
 
 const SimpleDex: React.FC = () => {
