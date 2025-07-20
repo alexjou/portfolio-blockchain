@@ -21,6 +21,13 @@ const DEFAULT_ADDRESSES = {
   TOKEN_B_ADDRESS: "0xa91B3ccb46365003Ca83B6145908f44Bd2ebd21a"
 };
 
+// Função utilitária para formatar valores de token
+const formatarValorToken = (valor: string | number) => {
+  const num = Number(valor);
+  if (isNaN(num)) return valor;
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+};
+
 const SimpleDex: React.FC = () => {
   const { showNotification } = useNotification();
 
@@ -1005,24 +1012,24 @@ const SimpleDex: React.FC = () => {
               <div className={`status font-semibold p-4 rounded-lg ${connected ? 'bg-green-100 text-green-800 border-2 border-green-200' : 'bg-red-100 text-red-800 border-2 border-red-200'}`} style={{ display: showStatus ? 'block' : 'none' }}>
                 <a
                   className="text-green-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded"
-                  
+
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                {statusMsg}
+                  {statusMsg}
                 </a>
               </div>
               {connected && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div className="bg-gray-900/80 p-4 rounded-xl">
                     <h3 className="text-green-400 font-semibold mb-2">Seus Saldos:</h3>
-                    <p className="text-sm">TokenA: <span className="text-green-300">{parseFloat(tokenABalance).toFixed(4)}</span></p>
-                    <p className="text-sm">TokenB: <span className="text-purple-300">{parseFloat(tokenBBalance).toFixed(4)}</span></p>
+                    <p className="text-sm">TokenA: <span className="text-green-300">{formatarValorToken(tokenABalance)}</span></p>
+                    <p className="text-sm">TokenB: <span className="text-purple-300">{formatarValorToken(tokenBBalance)}</span></p>
                   </div>
                   <div className="bg-gray-900/80 p-4 rounded-xl">
                     <h3 className="text-blue-400 font-semibold mb-2">Reservas do DEX:</h3>
-                    <p className="text-sm">TokenA: <span className="text-green-300">{parseFloat(reserveA).toFixed(4)}</span></p>
-                    <p className="text-sm">TokenB: <span className="text-purple-300">{parseFloat(reserveB).toFixed(4)}</span></p>
+                    <p className="text-sm">TokenA: <span className="text-green-300">{formatarValorToken(reserveA)}</span></p>
+                    <p className="text-sm">TokenB: <span className="text-purple-300">{formatarValorToken(reserveB)}</span></p>
                   </div>
                 </div>
               )}
@@ -1031,7 +1038,7 @@ const SimpleDex: React.FC = () => {
 
           {/* Gestão de Tokens (Mint/Burn) */}
           <div className="section bg-gray-800/80 border-2 border-gray-700 rounded-xl p-6 mb-6 text-gray-100">
-            <h2 className="mb-5 pb-2 border-b-4 border-orange-500 text-xl font-semibold text-white">🪙 Gestão de Tokens</h2>
+            <h2 className="mb-5 pb-2 border-b-4 border-orange-500 text-xl font-semibold text-white">💵 Gestão de Tokens</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Mint Tokens */}
               <div className="bg-gray-900/80 p-4 rounded-xl border border-orange-700">
@@ -1307,12 +1314,12 @@ const SimpleDex: React.FC = () => {
             <div className="flex flex-col items-center gap-2 mb-4">
               {precoTokenA !== null && (
                 <div className="bg-green-900/40 border border-green-600 rounded px-4 py-2 text-green-200 font-mono text-sm w-full text-center">
-                  Preço TokenA: <span className="font-bold">{precoTokenA}</span>
+                  Preço TokenA: <span className="font-bold">{formatarValorToken(precoTokenA)}</span>
                 </div>
               )}
               {precoTokenB !== null && (
                 <div className="bg-purple-900/40 border border-purple-600 rounded px-4 py-2 text-purple-200 font-mono text-sm w-full text-center">
-                  Preço TokenB: <span className="font-bold">{precoTokenB}</span>
+                  Preço TokenB: <span className="font-bold">{formatarValorToken(precoTokenB)}</span>
                 </div>
               )}
             </div>
