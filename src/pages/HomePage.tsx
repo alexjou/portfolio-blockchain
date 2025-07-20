@@ -34,7 +34,6 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mt-8">
             <Link to="/blockchain3d" className="btn-hero bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-10 py-4 rounded-2xl text-2xl font-bold shadow-xl transition-all duration-300 border-2 border-transparent hover:border-pink-400 focus:outline-none focus:ring-4 focus:ring-pink-400/50 animate-glow">BlockChain3D</Link>
-            <a href="#projetos" className="btn-hero bg-gradient-to-r from-blue-600 via-cyan-500 to-green-500 hover:from-blue-700 hover:to-green-700 px-10 py-4 rounded-2xl text-2xl font-bold shadow-xl transition-all duration-300 border-2 border-transparent hover:border-cyan-400 focus:outline-none focus:ring-4 focus:ring-cyan-400/50 animate-glow">Ver Projetos</a>
           </div>
           <div className="flex flex-wrap gap-3 mt-8 justify-center">
             <span className="bg-green-600 px-4 py-1 rounded-full text-base font-semibold shadow">ETH-KIPU</span>

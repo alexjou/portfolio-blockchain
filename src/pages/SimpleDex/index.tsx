@@ -18,6 +18,9 @@ const simpleDexAbi: any[] = simpleDexAbiJson;
 const SimpleDex: React.FC = () => {
   const { showNotification } = useNotification();
 
+  const [precoTokenA, setPrecoTokenA] = useState<string | null>(null);
+  const [precoTokenB, setPrecoTokenB] = useState<string | null>(null);
+
   // Estados para liquidez
   const [amountA, setAmountA] = useState("");
   const [amountB, setAmountB] = useState("");
@@ -439,8 +442,7 @@ const SimpleDex: React.FC = () => {
         // Verificar saldos e reservas
         await checkBalances(_signer);
         await checkReserves();
-        await checkOwner();
-
+        await handleVerificarOwner(_contract);
         setLoading(false);
       } catch (error: any) {
         console.error("Erro na inicialização:", error);
@@ -451,7 +453,6 @@ const SimpleDex: React.FC = () => {
     };
     init();
   }, []);
-
   const adicionarLiquidez = async () => {
     if (!contract) {
       mostrarToastAviso("Conecte sua carteira!", 'error');
@@ -483,15 +484,7 @@ const SimpleDex: React.FC = () => {
 
     setLoading(true);
     try {
-      const tx = await contract.addLiquidity(
-        ethers.parseUnits(amountA, 18),
-        ethers.parseUnits(amountB, 18)
-      );
-      mostrarToastAviso(`Adicionando liquidez... Hash: ${tx.hash}`, 'info');
-      await tx.wait();
-      mostrarToastAviso("Liquidez adicionada com sucesso!", 'success');
-
-      // Atualizar saldos e reservas
+      // Obter signer de forma robusta
       let signer = null;
       if (contract && contract.signer) {
         try {
@@ -500,7 +493,6 @@ const SimpleDex: React.FC = () => {
           console.log("Erro ao obter signer do contrato:", error);
         }
       }
-
       if (!signer && (window as any).ethereum) {
         try {
           const provider = new ethers.BrowserProvider((window as any).ethereum);
@@ -509,10 +501,31 @@ const SimpleDex: React.FC = () => {
           console.log("Erro ao obter signer do provider:", error);
         }
       }
-
-      if (signer) {
-        await checkBalances(signer);
+      if (!signer) {
+        mostrarToastAviso("Não foi possível obter o signer", 'error');
+        setLoading(false);
+        return;
       }
+      // Aprovar TokenA
+      const tokenAContract = new ethers.Contract(TOKEN_A_ADDRESS, tokenAAbiJson, signer);
+      const txA = await tokenAContract.approve(SIMPLE_DEX_ADDRESS, ethers.parseUnits(amountA, 18));
+      mostrarToastAviso(`Aprovando TokenA... Hash: ${txA.hash}`, 'info');
+      await txA.wait();
+      // Aprovar TokenB
+      const tokenBContract = new ethers.Contract(TOKEN_B_ADDRESS, tokenBAbiJson, signer);
+      const txB = await tokenBContract.approve(SIMPLE_DEX_ADDRESS, ethers.parseUnits(amountB, 18));
+      mostrarToastAviso(`Aprovando TokenB... Hash: ${txB.hash}`, 'info');
+      await txB.wait();
+      // Agora sim, adicionar liquidez
+      const tx = await contract.addLiquidity(
+        ethers.parseUnits(amountA, 18),
+        ethers.parseUnits(amountB, 18)
+      );
+      mostrarToastAviso(`Adicionando liquidez... Hash: ${tx.hash}`, 'info');
+      await tx.wait();
+      mostrarToastAviso("Liquidez adicionada com sucesso!", 'success');
+      // Atualizar saldos e reservas
+      await checkBalances(signer);
       await checkReserves();
     } catch (err: any) {
       mostrarToastAviso("Erro ao adicionar liquidez: " + (err.message || "Erro desconhecido"), 'error');
@@ -718,16 +731,94 @@ const SimpleDex: React.FC = () => {
     setLoading(true);
     try {
       const price = await contract.getPrice(tokenAddress);
+      const priceFormatted = ethers.formatUnits(price, 18);
       const tokenName = tokenAddress === TOKEN_A_ADDRESS ? "TokenA" : "TokenB";
-      mostrarToastAviso(`Preço do ${tokenName}: ${ethers.formatUnits(price, 18)}`, 'info');
+      mostrarToastAviso(`Preço do ${tokenName}: ${priceFormatted}`, 'info');
+      if (tokenAddress === TOKEN_A_ADDRESS) setPrecoTokenA(priceFormatted);
+      if (tokenAddress === TOKEN_B_ADDRESS) setPrecoTokenB(priceFormatted);
     } catch (err: any) {
       if (err.message && err.message.includes("No liquidity")) {
         mostrarToastAviso("Não há liquidez suficiente para calcular o preço. Adicione liquidez primeiro.", 'warning');
+        if (tokenAddress === TOKEN_A_ADDRESS) setPrecoTokenA(null);
+        if (tokenAddress === TOKEN_B_ADDRESS) setPrecoTokenB(null);
       } else {
         mostrarToastAviso("Erro ao consultar preço: " + (err.message || "Erro desconhecido"), 'error');
       }
     }
     setLoading(false);
+  };
+
+  const handleCopySimpleDex = () => handleCopy(SIMPLE_DEX_ADDRESS);
+  const handleCopyTokenA = () => handleCopy(TOKEN_A_ADDRESS);
+  const handleCopyTokenB = () => handleCopy(TOKEN_B_ADDRESS);
+  const toggleShowSimpleDexCode = () => setShowSimpleDexCode(prev => !prev);
+  const toggleShowTokenACode = () => setShowTokenACode(prev => !prev);
+  const toggleShowTokenBCode = () => setShowTokenBCode(prev => !prev);
+
+  // Adicione a função fora do JSX
+  const handleVerificarOwner = async (contract: any) => {
+    try {
+      console.log("=== TESTE DE VERIFICAÇÃO DE OWNER ===");
+      if (!contract) {
+        console.log("Contrato não disponível");
+        mostrarToastAviso("Contrato não disponível", 'error');
+        return;
+      }
+      const ownerAddress = await contract.owner();
+      console.log("Owner do contrato:", ownerAddress);
+      let userAddress = null;
+      if (contract.signer) {
+        try {
+          const signer = await contract.signer;
+          if (signer && typeof signer.getAddress === 'function') {
+            userAddress = await signer.getAddress();
+            console.log("Método 1 - Endereço do usuário:", userAddress);
+          }
+        } catch (error) {
+          console.log("Método 1 falhou:", error);
+        }
+      }
+      if (!userAddress && (window as any).ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider((window as any).ethereum);
+          const globalSigner = await provider.getSigner();
+          userAddress = await globalSigner.getAddress();
+          console.log("Método 2 - Endereço do usuário:", userAddress);
+        } catch (error) {
+          console.log("Método 2 falhou:", error);
+        }
+      }
+      if (!userAddress) {
+        console.log("Não foi possível obter o endereço do usuário");
+        mostrarToastAviso("Não foi possível obter o endereço do usuário", 'error');
+        return;
+      }
+      console.log("Endereço final do usuário:", userAddress);
+      console.log("São iguais?", ownerAddress.toLowerCase() === userAddress.toLowerCase());
+      const isOwnerResult = ownerAddress.toLowerCase() === userAddress.toLowerCase();
+      setIsOwner(isOwnerResult);
+      mostrarToastAviso(`Owner: ${ownerAddress}, Usuário: ${userAddress}, É Owner: ${isOwnerResult}`, 'info');
+    } catch (error: any) {
+      console.error("Erro no teste:", error);
+      mostrarToastAviso("Erro ao verificar owner: " + (error.message || "Erro desconhecido"), 'error');
+    }
+  };
+
+  // Atualizar os handlers de onValueChange para amountA e amountB
+  const handleAmountAChange = (values: NumberFormatValues) => {
+    setAmountA(values.value);
+    // Só calcular se já houver liquidez
+    if (parseFloat(reserveA) > 0 && parseFloat(reserveB) > 0 && values.value) {
+      const proporcao = parseFloat(reserveB) / parseFloat(reserveA);
+      setAmountB((parseFloat(values.value) * proporcao).toString());
+    }
+  };
+  const handleAmountBChange = (values: NumberFormatValues) => {
+    setAmountB(values.value);
+    if (parseFloat(reserveA) > 0 && parseFloat(reserveB) > 0 && values.value) {
+      const proporcao = parseFloat(reserveA) / parseFloat(reserveB);
+      setAmountA((parseFloat(values.value) * proporcao).toString());
+    }
   };
 
   return (
@@ -754,7 +845,7 @@ const SimpleDex: React.FC = () => {
                 </a>
                 <button
                   className="ml-1 px-2 py-1 bg-blue-700 text-white rounded hover:bg-blue-900 active:bg-blue-950 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
-                  onClick={() => handleCopy(SIMPLE_DEX_ADDRESS)}
+                  onClick={handleCopySimpleDex}
                   title="Copiar endereço"
                 >
                   {copied === SIMPLE_DEX_ADDRESS ? "Copiado!" : "Copiar"}
@@ -775,7 +866,7 @@ const SimpleDex: React.FC = () => {
                 </a>
                 <button
                   className="ml-1 px-2 py-1 bg-green-700 text-white rounded hover:bg-green-900 active:bg-green-950 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
-                  onClick={() => handleCopy(TOKEN_A_ADDRESS)}
+                  onClick={handleCopyTokenA}
                   title="Copiar endereço"
                 >
                   {copied === TOKEN_A_ADDRESS ? "Copiado!" : "Copiar"}
@@ -796,7 +887,7 @@ const SimpleDex: React.FC = () => {
                 </a>
                 <button
                   className="ml-1 px-2 py-1 bg-purple-700 text-white rounded hover:bg-purple-900 active:bg-purple-950 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
-                  onClick={() => handleCopy(TOKEN_B_ADDRESS)}
+                  onClick={handleCopyTokenB}
                   title="Copiar endereço"
                 >
                   {copied === TOKEN_B_ADDRESS ? "Copiado!" : "Copiar"}
@@ -951,68 +1042,6 @@ const SimpleDex: React.FC = () => {
                 <span className={`text-sm font-semibold ${isOwner ? 'text-green-400' : 'text-red-400'}`}>
                   {isOwner ? '✅ É Owner' : '❌ Não é Owner'}
                 </span>
-                <button
-                  className="ml-2 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 cursor-pointer"
-                  onClick={async () => {
-                    try {
-                      console.log("=== TESTE DE VERIFICAÇÃO DE OWNER ===");
-                      if (!contract) {
-                        console.log("Contrato não disponível");
-                        mostrarToastAviso("Contrato não disponível", 'error');
-                        return;
-                      }
-
-                      const ownerAddress = await contract.owner();
-                      console.log("Owner do contrato:", ownerAddress);
-
-                      // Tentar obter o signer de diferentes formas
-                      let userAddress = null;
-
-                      // Método 1: Direto do contrato
-                      if (contract.signer) {
-                        try {
-                          const signer = await contract.signer;
-                          if (signer && typeof signer.getAddress === 'function') {
-                            userAddress = await signer.getAddress();
-                            console.log("Método 1 - Endereço do usuário:", userAddress);
-                          }
-                        } catch (error) {
-                          console.log("Método 1 falhou:", error);
-                        }
-                      }
-
-                      // Método 2: Do provider global
-                      if (!userAddress && (window as any).ethereum) {
-                        try {
-                          const provider = new ethers.BrowserProvider((window as any).ethereum);
-                          const globalSigner = await provider.getSigner();
-                          userAddress = await globalSigner.getAddress();
-                          console.log("Método 2 - Endereço do usuário:", userAddress);
-                        } catch (error) {
-                          console.log("Método 2 falhou:", error);
-                        }
-                      }
-
-                      if (!userAddress) {
-                        console.log("Não foi possível obter o endereço do usuário");
-                        mostrarToastAviso("Não foi possível obter o endereço do usuário", 'error');
-                        return;
-                      }
-
-                      console.log("Endereço final do usuário:", userAddress);
-                      console.log("São iguais?", ownerAddress.toLowerCase() === userAddress.toLowerCase());
-
-                      const isOwnerResult = ownerAddress.toLowerCase() === userAddress.toLowerCase();
-                      setIsOwner(isOwnerResult);
-                      mostrarToastAviso(`Owner: ${ownerAddress}, Usuário: ${userAddress}, É Owner: ${isOwnerResult}`, 'info');
-                    } catch (error: any) {
-                      console.error("Erro no teste:", error);
-                      mostrarToastAviso("Erro ao verificar owner: " + (error.message || "Erro desconhecido"), 'error');
-                    }
-                  }}
-                >
-                  🔄 Verificar
-                </button>
               </div>
               {isOwner && (
                 <div className="mt-3 p-2 bg-green-900/30 border border-green-700 rounded text-green-200 text-sm">
@@ -1036,7 +1065,7 @@ const SimpleDex: React.FC = () => {
               )}
               <NumericFormat
                 value={amountA}
-                onValueChange={(values: NumberFormatValues) => setAmountA(values.value)}
+                onValueChange={handleAmountAChange}
                 thousandSeparator={false}
                 decimalScale={18}
                 allowNegative={false}
@@ -1046,7 +1075,7 @@ const SimpleDex: React.FC = () => {
               />
               <NumericFormat
                 value={amountB}
-                onValueChange={(values: NumberFormatValues) => setAmountB(values.value)}
+                onValueChange={handleAmountBChange}
                 thousandSeparator={false}
                 decimalScale={18}
                 allowNegative={false}
@@ -1167,6 +1196,18 @@ const SimpleDex: React.FC = () => {
                 Preço TokenB
               </button>
             </div>
+            <div className="flex flex-col items-center gap-2 mb-4">
+              {precoTokenA !== null && (
+                <div className="bg-green-900/40 border border-green-600 rounded px-4 py-2 text-green-200 font-mono text-sm w-full text-center">
+                  Preço TokenA: <span className="font-bold">{precoTokenA}</span>
+                </div>
+              )}
+              {precoTokenB !== null && (
+                <div className="bg-purple-900/40 border border-purple-600 rounded px-4 py-2 text-purple-200 font-mono text-sm w-full text-center">
+                  Preço TokenB: <span className="font-bold">{precoTokenB}</span>
+                </div>
+              )}
+            </div>
           </div>
 
 
@@ -1176,19 +1217,19 @@ const SimpleDex: React.FC = () => {
             <div className="flex gap-4 justify-center mb-4 flex-wrap">
               <button
                 className="mb-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-2 rounded-lg font-semibold shadow hover:-translate-y-1 hover:shadow-lg transition-all active:scale-95 cursor-pointer hover:from-purple-600 hover:to-indigo-700"
-                onClick={() => setShowSimpleDexCode(prev => !prev)}
+                onClick={toggleShowSimpleDexCode}
               >
                 {showSimpleDexCode ? 'Ocultar SimpleDEX.sol' : 'Mostrar SimpleDEX.sol'}
               </button>
               <button
                 className="mb-2 bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-2 rounded-lg font-semibold shadow hover:-translate-y-1 hover:shadow-lg transition-all active:scale-95 cursor-pointer hover:from-green-600 hover:to-green-800"
-                onClick={() => setShowTokenACode(prev => !prev)}
+                onClick={toggleShowTokenACode}
               >
                 {showTokenACode ? 'Ocultar TokenA.sol' : 'Mostrar TokenA.sol'}
               </button>
               <button
                 className="mb-2 bg-gradient-to-r from-purple-500 to-purple-700 text-white px-6 py-2 rounded-lg font-semibold shadow hover:-translate-y-1 hover:shadow-lg transition-all active:scale-95 cursor-pointer hover:from-purple-600 hover:to-purple-800"
-                onClick={() => setShowTokenBCode(prev => !prev)}
+                onClick={toggleShowTokenBCode}
               >
                 {showTokenBCode ? 'Ocultar TokenB.sol' : 'Mostrar TokenB.sol'}
               </button>
