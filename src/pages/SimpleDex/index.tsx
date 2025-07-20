@@ -10,10 +10,16 @@ import simpleDexAbiJson from "./SimpleDEX.abi.json";
 import tokenAAbiJson from "./TokenA.abi.json";
 import tokenBAbiJson from "./TokenB.abi.json";
 
-const SIMPLE_DEX_ADDRESS = "0xAcCF736f18a8E78c1CBC2F808E5c735538EaAA10";
-const TOKEN_A_ADDRESS = "0x61Cfcf1919756e61B4bAE0b65c0458b467F5031F";
-const TOKEN_B_ADDRESS = "0xa91B3ccb46365003Ca83B6145908f44Bd2ebd21a";
-const simpleDexAbi: any[] = simpleDexAbiJson;
+// Função utilitária para validar endereço Ethereum
+const isValidAddress = (address: string) => /^0x[a-fA-F0-9]{40}$/.test(address);
+
+const LOCAL_STORAGE_KEY = "simpleDexCustomAddresses";
+
+const DEFAULT_ADDRESSES = {
+  SIMPLE_DEX_ADDRESS: "0xAcCF736f18a8E78c1CBC2F808E5c735538EaAA10",
+  TOKEN_A_ADDRESS: "0x61Cfcf1919756e61B4bAE0b65c0458b467F5031F",
+  TOKEN_B_ADDRESS: "0xa91B3ccb46365003Ca83B6145908f44Bd2ebd21a"
+};
 
 const SimpleDex: React.FC = () => {
   const { showNotification } = useNotification();
@@ -60,6 +66,20 @@ const SimpleDex: React.FC = () => {
   const [tokenACode, setTokenACode] = useState('');
   const [tokenBCode, setTokenBCode] = useState('');
 
+  // Estados para endereços customizáveis
+  const [addresses, setAddresses] = useState(() => {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : DEFAULT_ADDRESSES;
+  });
+  const [editMode, setEditMode] = useState(false);
+  const [editAddresses, setEditAddresses] = useState(addresses);
+  const [validating, setValidating] = useState(false);
+
+  // Atualizar estados dependentes dos endereços
+  const SIMPLE_DEX_ADDRESS = addresses.SIMPLE_DEX_ADDRESS;
+  const TOKEN_A_ADDRESS = addresses.TOKEN_A_ADDRESS;
+  const TOKEN_B_ADDRESS = addresses.TOKEN_B_ADDRESS;
+
   // Notificação
   const mostrarToastAviso = (mensagem: string, tipo: 'success' | 'error' | 'warning' | 'info' = 'info') => {
     showNotification(mensagem, tipo);
@@ -100,62 +120,6 @@ const SimpleDex: React.FC = () => {
       setReserveB(ethers.formatUnits(reserveBValue, 18));
     } catch (error) {
       console.error("Erro ao verificar reservas:", error);
-    }
-  };
-
-  // Função para verificar se é owner
-  const checkOwner = async () => {
-    try {
-      if (!contract) {
-        console.log("Contrato não disponível");
-        return;
-      }
-
-      const ownerAddress = await contract.owner();
-      console.log("Owner do contrato:", ownerAddress);
-
-      // Tentar obter o signer de diferentes formas
-      let signer = null;
-      let userAddress = null;
-
-      // Método 1: Direto do contrato
-      if (contract.signer) {
-        try {
-          signer = await contract.signer;
-          if (signer && typeof signer.getAddress === 'function') {
-            userAddress = await signer.getAddress();
-            console.log("Método 1 - Endereço do usuário:", userAddress);
-          }
-        } catch (error) {
-          console.log("Método 1 falhou:", error);
-        }
-      }
-
-      // Método 2: Do provider global
-      if (!userAddress && (window as any).ethereum) {
-        try {
-          const provider = new ethers.BrowserProvider((window as any).ethereum);
-          const globalSigner = await provider.getSigner();
-          userAddress = await globalSigner.getAddress();
-          console.log("Método 2 - Endereço do usuário:", userAddress);
-        } catch (error) {
-          console.log("Método 2 falhou:", error);
-        }
-      }
-
-      if (!userAddress) {
-        console.log("Não foi possível obter o endereço do usuário");
-        setIsOwner(false);
-        return;
-      }
-
-      console.log("Endereço final do usuário:", userAddress);
-      console.log("São iguais?", ownerAddress.toLowerCase() === userAddress.toLowerCase());
-
-      setIsOwner(ownerAddress.toLowerCase() === userAddress.toLowerCase());
-    } catch (error) {
-      console.error("Erro ao verificar owner:", error);
-      setIsOwner(false);
     }
   };
 
@@ -420,7 +384,7 @@ const SimpleDex: React.FC = () => {
           throw new Error('Contrato não encontrado na rede Sepolia!');
         }
 
-        const _contract = new ethers.Contract(SIMPLE_DEX_ADDRESS, simpleDexAbi, _signer);
+        const _contract = new ethers.Contract(SIMPLE_DEX_ADDRESS, simpleDexAbiJson, _signer);
 
         console.log("Contrato inicializado:", _contract);
         console.log("Endereço do contrato:", SIMPLE_DEX_ADDRESS);
@@ -453,6 +417,68 @@ const SimpleDex: React.FC = () => {
     };
     init();
   }, []);
+
+  // Atualizar localStorage quando endereços mudam
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(addresses));
+  }, [addresses]);
+
+  // Validação dos endereços customizados
+  const validateAddresses = async (addrs: typeof addresses) => {
+    if (!isValidAddress(addrs.SIMPLE_DEX_ADDRESS) || !isValidAddress(addrs.TOKEN_A_ADDRESS) || !isValidAddress(addrs.TOKEN_B_ADDRESS)) {
+      mostrarToastAviso("Endereço inválido!", 'error');
+      return false;
+    }
+    try {
+      setValidating(true);
+      const eth = (window as any).ethereum;
+      if (!eth) throw new Error("MetaMask não detectado");
+      const provider = new ethers.BrowserProvider(eth);
+      // Verifica se há código nos contratos
+      const codeDex = await provider.getCode(addrs.SIMPLE_DEX_ADDRESS);
+      const codeA = await provider.getCode(addrs.TOKEN_A_ADDRESS);
+      const codeB = await provider.getCode(addrs.TOKEN_B_ADDRESS);
+      if (codeDex === '0x' || codeA === '0x' || codeB === '0x') {
+        mostrarToastAviso("Um ou mais endereços não possuem contrato implantado!", 'error');
+        setValidating(false);
+        return false;
+      }
+      // Verifica se responde à ABI (ex: owner())
+      const contractDex = new ethers.Contract(addrs.SIMPLE_DEX_ADDRESS, simpleDexAbiJson, provider);
+      await contractDex.owner();
+      setValidating(false);
+      return true;
+    } catch (err: any) {
+      mostrarToastAviso("Erro ao validar contratos: " + (err.message || "Erro desconhecido"), 'error');
+      setValidating(false);
+      return false;
+    }
+  };
+
+  // Handlers do formulário de edição
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditAddresses({ ...editAddresses, [e.target.name]: e.target.value });
+  };
+  const handleEditSave = async () => {
+    if (await validateAddresses(editAddresses)) {
+      setAddresses(editAddresses);
+      setEditMode(false);
+      mostrarToastAviso("Endereços atualizados com sucesso!", 'success');
+      window.location.reload(); // Força recarregar para reinicializar contratos
+    }
+  };
+  const handleEditCancel = () => {
+    setEditAddresses(addresses);
+    setEditMode(false);
+  };
+  const handleRestoreDefaults = () => {
+    setAddresses(DEFAULT_ADDRESSES);
+    setEditAddresses(DEFAULT_ADDRESSES);
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    mostrarToastAviso("Endereços restaurados para o padrão!", 'info');
+    window.location.reload();
+  };
+
   const adicionarLiquidez = async () => {
     if (!contract) {
       mostrarToastAviso("Conecte sua carteira!", 'error');
@@ -831,70 +857,145 @@ const SimpleDex: React.FC = () => {
           {/* Informações dos Contratos */}
           <div className="contract-info bg-gray-900/80 p-5 rounded-xl mb-8 text-center text-sm break-words text-gray-100">
             <strong className="text-white">Endereços dos Contratos:</strong><br />
-            <div className="my-2 flex flex-col items-center">
-              <span className="font-semibold text-blue-400">SimpleDEX:</span><br />
-              <div className="flex items-center gap-2 justify-center">
-                <a
-                  className="text-blue-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded"
-                  href={`https://sepolia.etherscan.io/address/${SIMPLE_DEX_ADDRESS}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={`Endereço do contrato SimpleDEX: ${SIMPLE_DEX_ADDRESS}`}
-                >
-                  {SIMPLE_DEX_ADDRESS}
-                </a>
-                <button
-                  className="ml-1 px-2 py-1 bg-blue-700 text-white rounded hover:bg-blue-900 active:bg-blue-950 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
-                  onClick={handleCopySimpleDex}
-                  title="Copiar endereço"
-                >
-                  {copied === SIMPLE_DEX_ADDRESS ? "Copiado!" : "Copiar"}
-                </button>
-              </div>
-            </div>
-            <div className="my-2 flex flex-col items-center">
-              <span className="font-semibold text-green-400">TokenA:</span><br />
-              <div className="flex items-center gap-2 justify-center">
-                <a
-                  className="text-green-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded"
-                  href={`https://sepolia.etherscan.io/address/${TOKEN_A_ADDRESS}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={`Endereço do contrato TokenA: ${TOKEN_A_ADDRESS}`}
-                >
-                  {TOKEN_A_ADDRESS}
-                </a>
-                <button
-                  className="ml-1 px-2 py-1 bg-green-700 text-white rounded hover:bg-green-900 active:bg-green-950 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
-                  onClick={handleCopyTokenA}
-                  title="Copiar endereço"
-                >
-                  {copied === TOKEN_A_ADDRESS ? "Copiado!" : "Copiar"}
-                </button>
-              </div>
-            </div>
-            <div className="my-2 flex flex-col items-center">
-              <span className="font-semibold text-purple-400">TokenB:</span><br />
-              <div className="flex items-center gap-2 justify-center">
-                <a
-                  className="text-purple-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded"
-                  href={`https://sepolia.etherscan.io/address/${TOKEN_B_ADDRESS}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={`Endereço do contrato TokenB: ${TOKEN_B_ADDRESS}`}
-                >
-                  {TOKEN_B_ADDRESS}
-                </a>
-                <button
-                  className="ml-1 px-2 py-1 bg-purple-700 text-white rounded hover:bg-purple-900 active:bg-purple-950 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
-                  onClick={handleCopyTokenB}
-                  title="Copiar endereço"
-                >
-                  {copied === TOKEN_B_ADDRESS ? "Copiado!" : "Copiar"}
-                </button>
-              </div>
-            </div>
-            <div className="text-xs mt-1 text-gray-300">(Clique para visualizar no Etherscan)</div>
+            {!editMode ? (
+              <>
+                {/* Exibição normal dos endereços */}
+                <div className="my-2 flex flex-col items-center">
+                  <span className="font-semibold text-blue-400">SimpleDEX:</span><br />
+                  <div className="flex items-center gap-2 justify-center">
+                    <a
+                      className="text-blue-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded"
+                      href={`https://sepolia.etherscan.io/address/${SIMPLE_DEX_ADDRESS}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`Endereço do contrato SimpleDEX: ${SIMPLE_DEX_ADDRESS}`}
+                    >
+                      {SIMPLE_DEX_ADDRESS}
+                    </a>
+                    <button
+                      className="ml-1 px-2 py-1 bg-blue-700 text-white rounded hover:bg-blue-900 active:bg-blue-950 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
+                      onClick={handleCopySimpleDex}
+                      title="Copiar endereço"
+                    >
+                      {copied === SIMPLE_DEX_ADDRESS ? "Copiado!" : "Copiar"}
+                    </button>
+                  </div>
+                </div>
+                <div className="my-2 flex flex-col items-center">
+                  <span className="font-semibold text-green-400">TokenA:</span><br />
+                  <div className="flex items-center gap-2 justify-center">
+                    <a
+                      className="text-green-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded"
+                      href={`https://sepolia.etherscan.io/address/${TOKEN_A_ADDRESS}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`Endereço do contrato TokenA: ${TOKEN_A_ADDRESS}`}
+                    >
+                      {TOKEN_A_ADDRESS}
+                    </a>
+                    <button
+                      className="ml-1 px-2 py-1 bg-green-700 text-white rounded hover:bg-green-900 active:bg-green-950 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
+                      onClick={handleCopyTokenA}
+                      title="Copiar endereço"
+                    >
+                      {copied === TOKEN_A_ADDRESS ? "Copiado!" : "Copiar"}
+                    </button>
+                  </div>
+                </div>
+                <div className="my-2 flex flex-col items-center">
+                  <span className="font-semibold text-purple-400">TokenB:</span><br />
+                  <div className="flex items-center gap-2 justify-center">
+                    <a
+                      className="text-purple-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded"
+                      href={`https://sepolia.etherscan.io/address/${TOKEN_B_ADDRESS}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`Endereço do contrato TokenB: ${TOKEN_B_ADDRESS}`}
+                    >
+                      {TOKEN_B_ADDRESS}
+                    </a>
+                    <button
+                      className="ml-1 px-2 py-1 bg-purple-700 text-white rounded hover:bg-purple-900 active:bg-purple-950 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
+                      onClick={handleCopyTokenB}
+                      title="Copiar endereço"
+                    >
+                      {copied === TOKEN_B_ADDRESS ? "Copiado!" : "Copiar"}
+                    </button>
+                  </div>
+                </div>
+                <div className="text-xs mt-1 text-gray-300">(Clique para visualizar no Etherscan)</div>
+                <div className="flex justify-center gap-4 mt-4">
+                  <button
+                    className="px-4 py-1 bg-blue-700 text-white rounded hover:bg-blue-900 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
+                    onClick={() => setEditMode(true)}
+                  >
+                    Alterar endereços
+                  </button>
+                  {JSON.stringify(addresses) !== JSON.stringify(DEFAULT_ADDRESSES) && (
+                    <button
+                      className="px-4 py-1 bg-gray-700 text-white rounded hover:bg-gray-900 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
+                      onClick={handleRestoreDefaults}
+                    >
+                      Restaurar endereços padrão
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <form className="flex flex-col gap-2 items-center mt-4">
+                <div className="flex flex-col gap-1 w-full max-w-md">
+                  <label className="text-left text-xs text-blue-300">SimpleDEX</label>
+                  <input
+                    type="text"
+                    name="SIMPLE_DEX_ADDRESS"
+                    value={editAddresses.SIMPLE_DEX_ADDRESS}
+                    onChange={handleEditChange}
+                    className="w-full py-2 px-3 border-2 border-blue-700 rounded-lg text-base text-gray-900 bg-gray-100 mb-1"
+                    disabled={validating}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 w-full max-w-md">
+                  <label className="text-left text-xs text-green-300">TokenA</label>
+                  <input
+                    type="text"
+                    name="TOKEN_A_ADDRESS"
+                    value={editAddresses.TOKEN_A_ADDRESS}
+                    onChange={handleEditChange}
+                    className="w-full py-2 px-3 border-2 border-green-700 rounded-lg text-base text-gray-900 bg-gray-100 mb-1"
+                    disabled={validating}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 w-full max-w-md">
+                  <label className="text-left text-xs text-purple-300">TokenB</label>
+                  <input
+                    type="text"
+                    name="TOKEN_B_ADDRESS"
+                    value={editAddresses.TOKEN_B_ADDRESS}
+                    onChange={handleEditChange}
+                    className="w-full py-2 px-3 border-2 border-purple-700 rounded-lg text-base text-gray-900 bg-gray-100 mb-1"
+                    disabled={validating}
+                  />
+                </div>
+                <div className="flex gap-4 mt-2">
+                  <button
+                    type="button"
+                    className="px-4 py-1 bg-green-700 text-white rounded hover:bg-green-900 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
+                    onClick={handleEditSave}
+                    disabled={validating}
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    type="button"
+                    className="px-4 py-1 bg-red-700 text-white rounded hover:bg-red-900 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
+                    onClick={handleEditCancel}
+                    disabled={validating}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
           {/* Status da Conexão */}
@@ -902,7 +1003,14 @@ const SimpleDex: React.FC = () => {
             <h2 className="mb-5 pb-2 border-b-4 border-blue-500 text-xl font-semibold text-white">🔗 Status da Conexão</h2>
             <div className="flex flex-col gap-2">
               <div className={`status font-semibold p-4 rounded-lg ${connected ? 'bg-green-100 text-green-800 border-2 border-green-200' : 'bg-red-100 text-red-800 border-2 border-red-200'}`} style={{ display: showStatus ? 'block' : 'none' }}>
+                <a
+                  className="text-green-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded"
+                  
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                 {statusMsg}
+                </a>
               </div>
               {connected && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
