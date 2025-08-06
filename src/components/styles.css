@@ -7,6 +7,12 @@
   padding-right: 1.5rem;
 }
 
+/* Estilos do Language Switcher */
+.language-switcher {
+  position: relative;
+  display: inline-block;
+}
+
 @media (min-width: 640px) {
   .container {
     max-width: 640px;

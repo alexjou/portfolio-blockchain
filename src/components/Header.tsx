@@ -5,16 +5,20 @@ import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import '../styles/animations.css';
 import logoEther from '../assets/logoEther.png';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
+import LanguageSwitcherCompact from './LanguageSwitcherCompact';
 
-const NAV_LINKS = [
-  { to: '/seedguard', label: '1. SeedGuard', icon: '🛡️' },
-  { to: '/kipubank', label: '2. KipuBank', icon: '🏦' },
-  { to: '/cofre', label: '3. Cofre', icon: '💰' },
-  { to: '/simpledex', label: '4. SimpleDEX', icon: '🔄' },
+const getNavLinks = (t: any) => [
+  { to: '/seedguard', label: `1. ${t('projects.seedGuard')}`, icon: '🛡️' },
+  { to: '/kipubank', label: `2. ${t('projects.kipuBank')}`, icon: '🏦' },
+  { to: '/cofre', label: `3. ${t('projects.cofre')}`, icon: '💰' },
+  { to: '/simpledex', label: `4. ${t('projects.simpleDex')}`, icon: '🔄' },
 ];
 
 const Header: React.FC = () => {
   const location = useLocation();
+  const { t } = useTranslation();
   const [isConnected, setIsConnected] = useState(false);
   const [walletName, setWalletName] = useState('');
   const [walletBalance, setWalletBalance] = useState('');
@@ -23,7 +27,7 @@ const Header: React.FC = () => {
   // Função para conectar carteira
   const conectarCarteira = async () => {
     if (!(window as any).ethereum) {
-      alert('MetaMask não encontrada. Instale a extensão para continuar.');
+      alert(t('wallet.metamask_not_found'));
       return;
     }
     try {
@@ -43,7 +47,7 @@ const Header: React.FC = () => {
         window.dispatchEvent(new Event('walletUpdated'));
       }
     } catch (err) {
-      alert('Erro ao conectar carteira.');
+      alert(t('wallet.connect_error'));
     }
   };
 
@@ -113,7 +117,7 @@ const Header: React.FC = () => {
 
         {/* Navegação centralizada (desktop) */}
         <nav className="hidden md:flex flex-row justify-center items-center gap-8 flex-1">
-          {NAV_LINKS.map((link) => (
+          {getNavLinks(t).map((link) => (
             <div key={link.to} className="relative">
               <Link
                 to={link.to}
@@ -124,14 +128,20 @@ const Header: React.FC = () => {
               </Link>
             </div>
           ))}
+
+          {/* Seletor de idioma */}
+          <div className="hidden md:flex ml-4">
+            <LanguageSwitcher />
+          </div>
         </nav>
 
-        {/* Botão hamburger (mobile) alinhado à direita */}
-        <div className="flex md:hidden absolute right-0 top-0 h-full items-center pr-2">
+        {/* Botão hamburger e seletor de idioma (mobile) alinhados à direita */}
+        <div className="flex md:hidden absolute right-0 top-0 h-full items-center pr-2 gap-2">
+          <LanguageSwitcherCompact />
           <button
             className="text-white focus:outline-none"
             onClick={() => setMobileMenu((v) => !v)}
-            aria-label="Abrir menu"
+            aria-label={t('header.open_menu')}
           >
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -185,7 +195,7 @@ const Header: React.FC = () => {
             </div>
             <div className="flex flex-col items-center gap-6 w-full">
               <div className="bg-black/80 rounded-xl p-4 w-4/5 max-w-xs flex flex-col items-center gap-6">
-                {NAV_LINKS.map((link) => (
+                {getNavLinks(t).map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}
@@ -196,6 +206,7 @@ const Header: React.FC = () => {
                     <span>{link.label}</span>
                   </Link>
                 ))}
+
                 {/* Botão/metamask dentro do menu mobile */}
                 {isConnected ? (
                   <button className="mt-8 relative bg-gradient-to-r from-green-400 to-blue-700 text-white px-4 py-3 rounded-lg flex items-center shadow-md font-semibold gap-2 w-full">
@@ -214,9 +225,9 @@ const Header: React.FC = () => {
                     className="mt-8 bg-gradient-to-r from-yellow-400 to-purple-700 text-white px-6 py-3 rounded-lg shadow-md font-semibold cursor-pointer transition-transform active:scale-95 hover:brightness-110 w-full"
                     onClick={conectarCarteira}
                     type="button"
-                    title="Conectar carteira Ethereum"
+                    title={t('wallet.connect')}
                   >
-                    Conectar Carteira
+                    {t('wallet.connect')}
                   </button>
                 )}
               </div>

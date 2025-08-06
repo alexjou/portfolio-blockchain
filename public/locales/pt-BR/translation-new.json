@@ -1,0 +1,71 @@
+{
+  "header": {
+    "home": "Início",
+    "blockchain3D": "Blockchain 3D",
+    "projects": "Projetos",
+    "connect": "Conectar Carteira",
+    "menu": "Menu",
+    "openMenu": "Abrir menu"
+  },
+  "home": {
+    "title": "Bem-vindo ao ETH-KIPU",
+    "portfolioTitle": "Portfólio Blockchain com Ethereum",
+    "subtitle": "Plataforma de Blockchain Educacional",
+    "description": "Explore o mundo da tecnologia blockchain com nossos projetos interativos",
+    "getStarted": "Começar Agora",
+    "welcome": "Bem-vindo!",
+    "developer_intro": "Sou desenvolvedor focado em",
+    "ethereum_web3": "Ethereum & Web3",
+    "passionate_about": "apaixonado por criar soluções descentralizadas, seguras e inovadoras.",
+    "find_here": "Aqui você encontra projetos práticos, smart contracts em",
+    "solidity": "Solidity",
+    "integrations_with": "integrações com",
+    "ethers_js": "Ethers.js",
+    "security_tips": "dicas de segurança, e muito mais.",
+    "blockchain3d": "BlockChain3D",
+    "authorPhoto": "Foto do autor"
+  },
+  "navigation": {
+    "seedguard": "1. SeedGuard",
+    "kipubank": "2. KipuBank",
+    "cofre": "3. Cofre",
+    "simpledex": "4. SimpleDEX"
+  },
+  "projects": {
+    "kipuBank": "Kipu Bank",
+    "seedGuard": "SeedGuard",
+    "cofre": "Cofre",
+    "simpleDex": "SimpleDEX",
+    "viewProject": "Ver Projeto",
+    "description": "Descrição"
+  },
+  "wallet": {
+    "connect": "Conectar Carteira",
+    "disconnect": "Desconectar",
+    "address": "Endereço",
+    "balance": "Saldo",
+    "network": "Rede",
+    "metamask_not_found": "MetaMask não encontrada. Instale a extensão para continuar.",
+    "connect_error": "Erro ao conectar carteira."
+  },
+  "common": {
+    "loading": "Carregando...",
+    "error": "Erro ao carregar dados",
+    "success": "Operação realizada com sucesso",
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "back": "Voltar",
+    "next": "Próximo"
+  },
+  "footer": {
+    "rights": "Todos os direitos reservados",
+    "made": "Feito com",
+    "by": "por"
+  },
+  "language": {
+    "select": "Selecionar Idioma",
+    "pt-BR": "Português",
+    "en": "Inglês",
+    "es": "Espanhol"
+  }
+}

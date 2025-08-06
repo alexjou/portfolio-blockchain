@@ -9,6 +9,7 @@ import { useNotification } from "../../context/NotificationContext";
 import simpleDexAbiJson from "./SimpleDEX.abi.json";
 import tokenAAbiJson from "./TokenA.abi.json";
 import tokenBAbiJson from "./TokenB.abi.json";
+import { useTranslation } from 'react-i18next';
 
 // Função utilitária para validar endereço Ethereum
 const isValidAddress = (address: string) => /^0x[a-fA-F0-9]{40}$/.test(address);
@@ -30,6 +31,7 @@ const formatarValorToken = (valor: string | number) => {
 
 const SimpleDex: React.FC = () => {
   const { showNotification } = useNotification();
+  const { t } = useTranslation();
 
   const [precoTokenA, setPrecoTokenA] = useState<string | null>(null);
   const [precoTokenB, setPrecoTokenB] = useState<string | null>(null);
@@ -51,7 +53,7 @@ const SimpleDex: React.FC = () => {
   const [burnAmountB, setBurnAmountB] = useState("");
 
   // Estados de controle
-  const [statusMsg, setStatusMsg] = useState("Carteira não conectada");
+  const [statusMsg, setStatusMsg] = useState(t('simpledex.wallet_not_connected'));
   const [showStatus, setShowStatus] = useState(false);
   const [loading, setLoading] = useState(false);
   const [contract, setContract] = useState<any>(null);
@@ -133,7 +135,7 @@ const SimpleDex: React.FC = () => {
   // Função para mint TokenA
   const mintTokenA = async () => {
     if (!mintAmountA || parseFloat(mintAmountA) <= 0) {
-      mostrarToastAviso("Insira um valor válido para mint!", 'warning');
+      mostrarToastAviso(t('simpledex.valid_value'), 'warning');
       return;
     }
 
@@ -145,7 +147,7 @@ const SimpleDex: React.FC = () => {
         try {
           signer = await contract.signer;
         } catch (error) {
-          console.log("Erro ao obter signer do contrato:", error);
+          console.log(t('simpledex.error_signer'), error);
         }
       }
 

@@ -1,0 +1,123 @@
+{
+  "header": {
+    "home": "Home",
+    "blockchain3D": "Blockchain 3D",
+    "projects": "Projects",
+    "connect": "Connect Wallet",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "open_menu": "Open menu",
+    "connect_wallet_ethereum": "Connect Ethereum wallet"
+  },
+  "home": {
+    "title": "Welcome to ETH-KIPU",
+    "portfolioTitle": "Ethereum Blockchain Portfolio",
+    "subtitle": "Educational Blockchain Platform",
+    "description": "Explore the world of blockchain technology with our interactive projects",
+    "getStarted": "Get Started",
+    "welcome": "Welcome!",
+    "developer_intro": "I'm a developer focused on",
+    "ethereum_web3": "Ethereum & Web3",
+    "passionate_about": "passionate about creating decentralized, secure and innovative solutions.",
+    "find_here": "Here you'll find practical projects, smart contracts in",
+    "solidity": "Solidity",
+    "integrations_with": "integrations with",
+    "ethers_js": "Ethers.js",
+    "security_tips": "security tips, and much more.",
+    "blockchain3d": "BlockChain3D",
+    "blockchain3DBtn": "BlockChain3D",
+    "authorPhoto": "Author photo",
+    "intro": "I'm a developer focused on Ethereum & Web3, passionate about creating decentralized, secure and innovative solutions.",
+    "about": "Here you'll find practical projects, smart contracts in Solidity, integrations with Ethers.js, security tips, and much more."
+  },
+  "projects": {
+    "kipuBank": "Kipu Bank",
+    "seedGuard": "SeedGuard",
+    "cofre": "Vault",
+    "simpleDex": "SimpleDEX",
+    "viewProject": "View Project",
+    "description": "Description",
+    "title": "Projects",
+    "stack_title": "Ethereum Stack & Skills",
+    "ethereum": "Ethereum",
+    "ethereum_desc": "Blockchain, RPC, Testnets",
+    "solidity": "Solidity",
+    "solidity_desc": "Smart Contracts, Patterns",
+    "react_ethers": "React - Ethers.js",
+    "react_ethers_desc": "Web3, Integration, Frontend",
+    "metamask": "Metamask",
+    "metamask_desc": "Wallets, Signatures",
+    "remix": "Remix",
+    "remix_desc": "Online IDE, Deploy, Tests",
+    "security": "Security",
+    "security_desc": "Auditing, Best Practices",
+    "seedguard_desc": "Store messages securely on the Ethereum blockchain. Save and retrieve texts protected by your wallet.",
+    "seedguard_tag": "Message guardian",
+    "kipubank_desc": "Decentralized digital bank. Deposit, withdraw and check your ETH balance with limits and control via smart contract.",
+    "kipubank_tag": "Decentralized bank",
+    "cofre_desc": "Manage Customer balance in a digital Vault. Deposit, withdraw and track internal transactions between Ethereum contracts.",
+    "cofre_tag": "Balance vault",
+    "simpledex_desc": "Simple DEX for Ethereum: add/remove liquidity, approve tokens, make swaps and view contracts. Modern frontend, integration with MetaMask and Ethers.js.",
+    "simpledex_tag": "DEX & Liquidity",
+    "blockchain3d_desc": "Visualize blockchain and Ethereum concepts in 3D. Interact with blocks, transactions and contracts immersively.",
+    "blockchain3d_tag": "3D Experience"
+  },
+  "wallet": {
+    "connect": "Connect Wallet",
+    "disconnect": "Disconnect",
+    "address": "Address",
+    "balance": "Balance",
+    "network": "Network",
+    "metamask_not_found": "MetaMask not found. Please install the extension to continue.",
+    "connect_error": "Error connecting wallet."
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error loading data",
+    "success": "Operation completed successfully",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next"
+  },
+  "footer": {
+    "rights": "All rights reserved",
+    "made": "Made with",
+    "by": "by"
+  },
+  "language": {
+    "select": "Select Language",
+    "pt-BR": "Portuguese",
+    "en": "English",
+    "es": "Spanish"
+  },
+  "navigation": {
+    "seedguard": "1. SeedGuard",
+    "kipubank": "2. KipuBank",
+    "cofre": "3. Vault",
+    "simpledex": "4. SimpleDEX"
+  },
+  "about": {
+    "title": "About the Author",
+    "student": "Student of the Blockchain with Ethereum course (ETH-KIPU + UFPE)",
+    "purpose": "Website created to share projects, learnings and experiences",
+    "project_pages": "Each project will have a dedicated screen with explanations and code",
+    "contact": "Contact",
+    "email": "joubert2006@hotmail.com"
+  },
+  "tags": {
+    "eth_kipu": "ETH-KIPU",
+    "ufpe": "UFPE",
+    "ethereum": "Ethereum",
+    "solidity": "Solidity",
+    "ethers": "Ethers.js",
+    "web3": "Web3",
+    "security": "Security"
+  },
+  "simpledex": {
+    "wallet_not_connected": "Wallet not connected",
+    "valid_value": "Enter a valid value for mint!",
+    "error_signer": "Error getting contract signer",
+    "error_provider": "Error getting provider signer"
+  }
+}

@@ -4,6 +4,8 @@ import './index.css';
 import App from './App.tsx';
 import { NotificationProvider } from './context/NotificationContext';
 import NotificationContainer from './components/NotificationContainer';
+// Importar a configuração i18n
+import './i18n';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

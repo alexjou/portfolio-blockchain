@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1235" height="650" viewBox="0 0 1235 650" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1235" height="650" fill="#bf0a30"/>
+  <rect width="1235" height="50" y="50" fill="#ffffff"/>
+  <rect width="1235" height="50" y="150" fill="#ffffff"/>
+  <rect width="1235" height="50" y="250" fill="#ffffff"/>
+  <rect width="1235" height="50" y="350" fill="#ffffff"/>
+  <rect width="1235" height="50" y="450" fill="#ffffff"/>
+  <rect width="1235" height="50" y="550" fill="#ffffff"/>
+  <rect width="494" height="350" fill="#002868"/>
+  
+  <!-- 50 stars (simplified) -->
+  <g fill="#ffffff">
+    <!-- Row 1: 6 stars -->
+    <circle cx="41.2" cy="35" r="20"/>
+    <circle cx="123.5" cy="35" r="20"/>
+    <circle cx="205.8" cy="35" r="20"/>
+    <circle cx="288.2" cy="35" r="20"/>
+    <circle cx="370.5" cy="35" r="20"/>
+    <circle cx="452.8" cy="35" r="20"/>
+    
+    <!-- Row 2: 5 stars -->
+    <circle cx="82.3" cy="87.5" r="20"/>
+    <circle cx="164.7" cy="87.5" r="20"/>
+    <circle cx="247" cy="87.5" r="20"/>
+    <circle cx="329.3" cy="87.5" r="20"/>
+    <circle cx="411.7" cy="87.5" r="20"/>
+    
+    <!-- Row 3: 6 stars -->
+    <circle cx="41.2" cy="140" r="20"/>
+    <circle cx="123.5" cy="140" r="20"/>
+    <circle cx="205.8" cy="140" r="20"/>
+    <circle cx="288.2" cy="140" r="20"/>
+    <circle cx="370.5" cy="140" r="20"/>
+    <circle cx="452.8" cy="140" r="20"/>
+    
+    <!-- Row 4: 5 stars -->
+    <circle cx="82.3" cy="192.5" r="20"/>
+    <circle cx="164.7" cy="192.5" r="20"/>
+    <circle cx="247" cy="192.5" r="20"/>
+    <circle cx="329.3" cy="192.5" r="20"/>
+    <circle cx="411.7" cy="192.5" r="20"/>
+    
+    <!-- Row 5: 6 stars -->
+    <circle cx="41.2" cy="245" r="20"/>
+    <circle cx="123.5" cy="245" r="20"/>
+    <circle cx="205.8" cy="245" r="20"/>
+    <circle cx="288.2" cy="245" r="20"/>
+    <circle cx="370.5" cy="245" r="20"/>
+    <circle cx="452.8" cy="245" r="20"/>
+    
+    <!-- Row 6: 5 stars -->
+    <circle cx="82.3" cy="297.5" r="20"/>
+    <circle cx="164.7" cy="297.5" r="20"/>
+    <circle cx="247" cy="297.5" r="20"/>
+    <circle cx="329.3" cy="297.5" r="20"/>
+    <circle cx="411.7" cy="297.5" r="20"/>
+  </g>
+</svg>
