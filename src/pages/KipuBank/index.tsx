@@ -4,6 +4,7 @@ import { NumericFormat } from 'react-number-format';
 import { useNotification } from '../../context/NotificationContext';
 import Footer from "../../components/Footer";
 import { ethers } from 'ethers';
+import { useTranslation } from 'react-i18next';
 
 const contratoAddress = "0xd2f44f2edccbbac4b1d058c6ddaebfb203681bd6";
 const contratoABI: any[] = [
@@ -97,19 +98,22 @@ function formatarETH(valor: any, casasDecimais = 8) {
 }
 
 const KipuBank: React.FC = () => {
+  // Hook de tradução
+  const { t } = useTranslation();
+
   // Estados simulados para exibição inicial
   const { showNotification } = useNotification();
   const [connected, setConnected] = useState(false);
   const [userBalance, setUserBalance] = useState('0.0 ETH');
   const [bankBalance, setBankBalance] = useState('0.0 ETH');
   const [bankCap, setBankCap] = useState('0.0 ETH');
-  const [availableSpace, setAvailableSpace] = useState('Carregando espaço disponível...');
+  const [availableSpace, setAvailableSpace] = useState(t('kipuBank.loadingAvailableSpace'));
   const [depositValue, setDepositValue] = useState('');
   // ...existing code...
   const [withdrawValue, setWithdrawValue] = useState('');
   const [newCap, setNewCap] = useState('');
   const [isOwner, setIsOwner] = useState(false);
-  const [statusMsg, setStatusMsg] = useState('Carteira não conectada');
+  const [statusMsg, setStatusMsg] = useState(t('kipuBank.walletNotConnected'));
   const [showStatus, setShowStatus] = useState(false);
   const [statusTransacao, setStatusTransacao] = useState('');
   const [loading, setLoading] = useState(false);
@@ -147,7 +151,7 @@ const KipuBank: React.FC = () => {
           const _contrato = new ethers.Contract(contratoAddress, contratoABI, _signer);
           setContrato(_contrato);
           setConnected(true);
-          setStatusMsg(`Carteira conectada! Endereço: ${address}`);
+          setStatusMsg(`${t('kipuBank.connected')}: ${address.substring(0, 6)}...${address.substring(address.length - 4)}`);
           setShowStatus(true);
           window.dispatchEvent(new Event('walletUpdated'));
           // Verifica se é owner
@@ -169,7 +173,7 @@ const KipuBank: React.FC = () => {
   const handleConnect = async () => {
     try {
       if (!(window as any).ethereum) {
-        mostrarToastAviso('MetaMask não está instalada!', 'error');
+        mostrarToastAviso(t('kipuBank.metamaskNotInstalled'), 'error');
         return;
       }
       setLoading(true);
@@ -179,21 +183,21 @@ const KipuBank: React.FC = () => {
       const _signer = await _provider.getSigner();
       const network = await _provider.getNetwork();
       if (network.chainId !== 11155111n) {
-        mostrarToastAviso('Conecte à rede Sepolia!', 'error');
+        mostrarToastAviso(t('kipuBank.connectToSepolia'), 'error');
         setLoading(false);
         return;
       }
       const address = await _signer.getAddress();
       const contractCode = await _provider.getCode(contratoAddress);
       if (contractCode === '0x') {
-        mostrarToastAviso('Contrato não encontrado na rede Sepolia!', 'error');
+        mostrarToastAviso(t('kipuBank.contractNotFound'), 'error');
         setLoading(false);
         return;
       }
       const _contrato = new ethers.Contract(contratoAddress, contratoABI, _signer);
       setContrato(_contrato);
       setConnected(true);
-      setStatusMsg(`Carteira conectada! Endereço: ${address}`);
+      setStatusMsg(`${t('kipuBank.connected')}: ${address.substring(0, 6)}...${address.substring(address.length - 4)}`);
       setShowStatus(true);
       window.dispatchEvent(new Event('walletUpdated'));
       // Verifica se é owner
@@ -201,10 +205,10 @@ const KipuBank: React.FC = () => {
       setIsOwner(owner.toLowerCase() === address.toLowerCase());
       await atualizarInformacoesBanco(_contrato);
       setLoading(false);
-      mostrarToastAviso('Carteira conectada com sucesso!', 'success');
+      mostrarToastAviso(t('kipuBank.walletConnectedSuccess'), 'success');
     } catch (error: any) {
       setLoading(false);
-      mostrarToastAviso(error.message || 'Erro ao conectar', 'error');
+      mostrarToastAviso(error.message || t('kipuBank.errorConnecting'), 'error');
     }
   };
 
@@ -230,27 +234,27 @@ const KipuBank: React.FC = () => {
   const handleDepositar = async () => {
     try {
       if (!contrato) {
-        mostrarToastAviso('Conecte sua carteira!', 'error');
+        mostrarToastAviso(t('kipuBank.connectYourWallet'), 'error');
         return;
       }
       if (!depositValue || parseFloat(depositValue) <= 0) {
-        mostrarToastAviso('Insira um valor válido!', 'warning');
+        mostrarToastAviso(t('kipuBank.enterValidValue'), 'warning');
         return;
       }
       setLoading(true);
       const valor = ethers.parseEther(depositValue);
       const tx = await contrato.deposit({ value: valor });
-      setStatusTransacao(`Depósito em processamento... Hash: ${tx.hash}`);
+      setStatusTransacao(`${t('kipuBank.depositInProgress')}... Hash: ${tx.hash}`);
       await tx.wait();
-      setStatusTransacao(`Depósito realizado com sucesso!`);
+      setStatusTransacao(`${t('kipuBank.depositSuccessful')}!`);
       setDepositValue('');
       await atualizarInformacoesBanco();
       setLoading(false);
-      mostrarToastAviso('Depósito realizado com sucesso!', 'success');
+      mostrarToastAviso(t('kipuBank.depositSuccessful'), 'success');
     } catch (error: any) {
       setLoading(false);
-      mostrarToastAviso(error.message || 'Erro ao depositar', 'error');
-      setStatusTransacao(`Erro no depósito: ${error.message || 'Erro desconhecido'}`);
+      mostrarToastAviso(error.message || t('kipuBank.errorDepositing'), 'error');
+      setStatusTransacao(`${t('kipuBank.depositError')}: ${error.message || t('kipuBank.unknownError')}`);
     }
   };
 
@@ -258,27 +262,27 @@ const KipuBank: React.FC = () => {
   const handleSacar = async () => {
     try {
       if (!contrato) {
-        mostrarToastAviso('Conecte sua carteira!', 'error');
+        mostrarToastAviso(t('kipuBank.connectYourWallet'), 'error');
         return;
       }
       if (!withdrawValue || parseFloat(withdrawValue) <= 0) {
-        mostrarToastAviso('Insira um valor válido!', 'warning');
+        mostrarToastAviso(t('kipuBank.enterValidValue'), 'warning');
         return;
       }
       setLoading(true);
       const valor = ethers.parseEther(withdrawValue);
       const tx = await contrato.withdraw(valor);
-      setStatusTransacao(`Saque em processamento... Hash: ${tx.hash}`);
+      setStatusTransacao(`${t('kipuBank.withdrawalInProgress')}... Hash: ${tx.hash}`);
       await tx.wait();
-      setStatusTransacao(`Saque realizado com sucesso!`);
+      setStatusTransacao(`${t('kipuBank.withdrawalSuccessful')}!`);
       setWithdrawValue('');
       await atualizarInformacoesBanco();
       setLoading(false);
-      mostrarToastAviso('Saque realizado com sucesso!', 'success');
+      mostrarToastAviso(t('kipuBank.withdrawalSuccessful'), 'success');
     } catch (error: any) {
       setLoading(false);
-      mostrarToastAviso(error.message || 'Erro ao sacar', 'error');
-      setStatusTransacao(`Erro no saque: ${error.message || 'Erro desconhecido'}`);
+      mostrarToastAviso(error.message || t('kipuBank.errorWithdrawing'), 'error');
+      setStatusTransacao(`${t('kipuBank.withdrawalError')}: ${error.message || t('kipuBank.unknownError')}`);
     }
   };
 
@@ -286,27 +290,27 @@ const KipuBank: React.FC = () => {
   const handleAtualizarCap = async () => {
     try {
       if (!contrato) {
-        mostrarToastAviso('Conecte sua carteira!', 'error');
+        mostrarToastAviso(t('kipuBank.connectYourWallet'), 'error');
         return;
       }
       if (!newCap || parseFloat(newCap) <= 0) {
-        mostrarToastAviso('Insira um valor válido!', 'warning');
+        mostrarToastAviso(t('kipuBank.enterValidValue'), 'warning');
         return;
       }
       setLoading(true);
       const valor = ethers.parseEther(newCap);
       const tx = await contrato.updateBankCap(valor);
-      setStatusTransacao(`Atualização de limite em processamento... Hash: ${tx.hash}`);
+      setStatusTransacao(`${t('kipuBank.limitUpdateInProgress')}... Hash: ${tx.hash}`);
       await tx.wait();
-      setStatusTransacao('Limite do banco atualizado com sucesso!');
+      setStatusTransacao(t('kipuBank.bankLimitUpdated'));
       setNewCap('');
       await atualizarInformacoesBanco();
       setLoading(false);
-      mostrarToastAviso('Limite do banco atualizado com sucesso!', 'success');
+      mostrarToastAviso(t('kipuBank.bankLimitUpdated'), 'success');
     } catch (error: any) {
       setLoading(false);
-      mostrarToastAviso(error.message || 'Erro ao atualizar limite', 'error');
-      setStatusTransacao(`Erro na atualização: ${error.message || 'Erro desconhecido'}`);
+      mostrarToastAviso(error.message || t('kipuBank.errorUpdatingLimit'), 'error');
+      setStatusTransacao(`${t('kipuBank.updateError')}: ${error.message || t('kipuBank.unknownError')}`);
     }
   };
 
@@ -314,63 +318,63 @@ const KipuBank: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-black via-blue-950 to-purple-950 text-white flex flex-col">
       <main className="flex-1 flex items-center justify-center py-5 px-2">
         <DarkCard className="max-w-4xl w-full mx-auto">
-          <h1 className="text-center mb-2 text-4xl font-bold">🏦 KipuBank</h1>
-          <p className="text-center mb-8 italic text-gray-500">Banco digital seguro na blockchain Ethereum</p>
+          <h1 className="text-center mb-2 text-4xl font-bold">🏦 {t('kipuBank.title')}</h1>
+          <p className="text-center mb-8 italic text-gray-500">{t('kipuBank.subtitle')}</p>
 
           <div className="contract-info bg-gray-800/80 p-5 rounded-xl mb-8 text-center text-sm break-words text-gray-100">
-            <strong className="text-white">Contrato na Rede Sepolia:</strong><br />
+            <strong className="text-white">{t('kipuBank.contractOnNetwork')}:</strong><br />
             <a
               id="contract-link"
               className="text-blue-600 hover:underline font-mono break-all text-base inline-block max-w-full px-2 py-1 bg-gray-200 rounded mt-1"
               href={`https://sepolia.etherscan.io/address/${contratoAddress}`}
               target="_blank"
               rel="noopener noreferrer"
-              title={`Endereço do contrato: ${contratoAddress}`}
+              title={`${t('kipuBank.contractAddress')}: ${contratoAddress}`}
             >
               {contratoAddress}
             </a>
-            <div className="text-xs mt-1 text-gray-300">(Clique no endereço para visualizar no Etherscan)</div>
+            <div className="text-xs mt-1 text-gray-300">({t('kipuBank.clickToView')})</div>
           </div>
 
           {/* Conexão */}
           <div className="section bg-gray-800/80 border-2 border-gray-700 rounded-xl p-6 mb-6 text-gray-100">
-            <h2 className="mb-5 pb-2 border-b-4 border-blue-500 text-xl font-semibold text-white">🔗 Conectar Carteira</h2>
+            <h2 className="mb-5 pb-2 border-b-4 border-blue-500 text-xl font-semibold text-white">🔗 {t('kipuBank.connectWallet')}</h2>
             <button
               id="btn-conectar"
               className="bg-gradient-to-r from-blue-500 to-blue-700 text-white border-none py-4 px-8 rounded-lg text-lg font-semibold w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
               onClick={handleConnect}
               disabled={connected || loading}
             >
-              {connected ? 'Carteira Conectada ✓' : 'Conectar MetaMask'}
+              {connected ? t('kipuBank.walletConnected') : t('kipuBank.connectMetamask')}
             </button>
             <div
               id="status-conexao"
               className={`status font-semibold mt-4 p-4 rounded-lg ${connected ? 'bg-green-100 text-green-800 border-2 border-green-200' : 'bg-green-100 text-green-800 border-2 border-green-200'}`}
               style={{ display: showStatus ? 'block' : 'none' }}
             >
-              {statusMsg}
+              <div className="overflow-hidden text-ellipsis whitespace-normal break-words">{statusMsg}</div>
             </div>
           </div>
 
           {/* Informações do Banco */}
           <div id="secao-operacoes" className="section bg-gray-800/80 border-2 border-gray-700 rounded-xl p-6 mb-6 text-gray-100" style={{ display: connected ? 'block' : 'none' }}>
-            <h2 className="mb-5 pb-2 border-b-4 border-blue-500 text-xl font-semibold text-white">🏦 Informações do Banco</h2>
+            <h2 className="mb-5 pb-2 border-b-4 border-blue-500 text-xl font-semibold text-white">🏦 {t('kipuBank.bankInfo')}</h2>
 
             <div className="info-grid grid md:grid-cols-2 gap-4 mb-5 flex-col md:flex-row">
               <div className="info-item bg-gray-900/80 p-4 rounded-lg border border-gray-700 break-words">
-                <strong className="block mb-1 text-gray-200">Seu Saldo:</strong>
+                <strong className="block mb-1 text-gray-200">{t('kipuBank.yourBalance')}:</strong>
                 <span className="text-lg font-bold text-green-400 block p-2 bg-gray-900 bg-opacity-60 rounded mt-1">{userBalance}</span>
               </div>
               <div className="info-item bg-gray-900/80 p-4 rounded-lg border border-gray-700 break-words">
-                <strong className="block mb-1 text-gray-200">Saldo Total do Banco:</strong>
+                <strong className="block mb-1 text-gray-200">{t('kipuBank.totalBankBalance')}:</strong>
                 <span className="text-lg font-bold text-green-400 block p-2 bg-gray-900 bg-opacity-60 rounded mt-1">{bankBalance}</span>
               </div>
               <div className="info-item bg-gray-900/80 p-4 rounded-lg border border-gray-700 break-words">
-                <strong className="block mb-1 text-gray-200">Limite do Banco (Cap):</strong>
+                <strong className="block mb-1 text-gray-200">{t('kipuBank.bankLimit')}:</strong>
                 <span className="text-lg font-bold text-green-400 block p-2 bg-gray-900 bg-opacity-60 rounded mt-1">{bankCap}</span>
               </div>
               <div className="info-item bg-gray-900/80 p-4 rounded-lg border border-blue-700 break-words">
-                <strong className="block mb-1 text-blue-300">Espaço Disponível:</strong>
+                <strong className="block mb-1 text-blue-300">{t('kipuBank.availableSpace')}:</strong>
                 <span id="espaco-disponivel" className="text-lg font-bold text-blue-400 block p-2 bg-gray-900 bg-opacity-60 rounded mt-1">{availableSpace}</span>
               </div>
             </div>
@@ -380,11 +384,11 @@ const KipuBank: React.FC = () => {
                 className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white py-2 px-5 rounded-lg font-semibold w-auto transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
                 onClick={async () => {
                   await atualizarInformacoesBanco();
-                  mostrarToastAviso('Saldos atualizados!', 'success');
+                  mostrarToastAviso(t('kipuBank.balancesUpdated'), 'success');
                 }}
                 disabled={loading}
               >
-                🔄 Atualizar Saldos
+                🔄 {t('kipuBank.updateBalances')}
               </button>
             </div>
             <div id="status-transacao" className="status mt-6" style={{ display: statusTransacao ? 'block' : 'none', backgroundColor: statusTransacao.includes('sucesso') ? '#d4edda' : statusTransacao.includes('Erro') ? '#f8d7da' : undefined }}>
@@ -392,13 +396,13 @@ const KipuBank: React.FC = () => {
             </div>
 
             {/* Depósitos */}
-            <h2 className="mb-5 pb-2 border-b-4 border-blue-500 text-xl font-semibold mt-8 text-white">💰 Depósito</h2>
+            <h2 className="mb-5 pb-2 border-b-4 border-blue-500 text-xl font-semibold mt-8 text-white">💰 {t('kipuBank.deposit')}</h2>
             <div className="input-group mb-5">
-              <label htmlFor="valor-deposito" className="block mb-2 font-semibold text-gray-200">Valor a depositar (ETH):</label>
+              <label htmlFor="valor-deposito" className="block mb-2 font-semibold text-gray-200">{t('kipuBank.amountToDeposit')} (ETH):</label>
               <NumericFormat
                 value={depositValue}
                 onValueChange={values => setDepositValue(values.value)}
-                placeholder="Ex: 0.01"
+                placeholder={t('kipuBank.example')}
                 disabled={loading}
                 decimalScale={18}
                 allowNegative={false}
@@ -416,19 +420,19 @@ const KipuBank: React.FC = () => {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
-                  Processando...
+                  {t('kipuBank.processing')}
                 </span>
-              ) : 'Depositar ETH'}
+              ) : t('kipuBank.depositETH')}
             </button>
 
             {/* Saques */}
-            <h2 className="mb-5 pb-2 border-b-4 border-blue-500 text-xl font-semibold mt-8 text-white">💸 Saque</h2>
+            <h2 className="mb-5 pb-2 border-b-4 border-blue-500 text-xl font-semibold mt-8 text-white">💸 {t('kipuBank.withdrawal')}</h2>
             <div className="input-group mb-5">
-              <label htmlFor="valor-saque" className="block mb-2 font-semibold text-gray-200">Valor a sacar (ETH):</label>
+              <label htmlFor="valor-saque" className="block mb-2 font-semibold text-gray-200">{t('kipuBank.amountToWithdraw')} (ETH):</label>
               <NumericFormat
                 value={withdrawValue}
                 onValueChange={values => setWithdrawValue(values.value)}
-                placeholder="Ex: 0.01"
+                placeholder={t('kipuBank.example')}
                 disabled={loading}
                 decimalScale={18}
                 allowNegative={false}
@@ -446,23 +450,23 @@ const KipuBank: React.FC = () => {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
-                  Processando...
+                  {t('kipuBank.processing')}
                 </span>
-              ) : 'Sacar ETH'}
+              ) : t('kipuBank.withdrawETH')}
             </button>
 
             {/* Atualização de Limite (apenas para o proprietário) */}
             <div id="secao-admin" className="mt-8 border-t-2 border-dashed border-gray-300 pt-6" style={{ display: isOwner ? 'block' : 'none' }}>
-              <h2 className="mb-3 pb-2 text-xl font-semibold text-white">🔒 Administração (Apenas Proprietário)</h2>
-              <p className="mb-4 text-gray-300 italic">Estas opções estão disponíveis apenas para o proprietário do contrato.</p>
+              <h2 className="mb-3 pb-2 text-xl font-semibold text-white">🔒 {t('kipuBank.adminSection')}</h2>
+              <p className="mb-4 text-gray-300 italic">{t('kipuBank.adminOptionsAvailable')}</p>
 
-              <h3 className="text-lg font-semibold mb-2">📝 Atualizar Limite do Banco</h3>
+              <h3 className="text-lg font-semibold mb-2">📝 {t('kipuBank.updateBankLimit')}</h3>
               <div className="input-group mb-5">
-                <label htmlFor="novo-limite" className="block mb-2 font-semibold text-gray-200">Novo limite (ETH):</label>
+                <label htmlFor="novo-limite" className="block mb-2 font-semibold text-gray-200">{t('kipuBank.newLimit')} (ETH):</label>
                 <NumericFormat
                   value={newCap}
                   onValueChange={values => setNewCap(values.value)}
-                  placeholder="Ex: 5.0"
+                  placeholder={t('kipuBank.limitExample')}
                   disabled={loading}
                   decimalScale={18}
                   allowNegative={false}
@@ -480,9 +484,9 @@ const KipuBank: React.FC = () => {
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <svg className="animate-spin h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
-                    Processando...
+                    {t('kipuBank.processing')}
                   </span>
-                ) : 'Atualizar Limite do Banco'}
+                ) : t('kipuBank.updateBankLimit')}
               </button>
             </div>
           </div>
@@ -493,7 +497,7 @@ const KipuBank: React.FC = () => {
               className="mb-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-2 rounded-lg font-semibold shadow hover:-translate-y-1 hover:shadow-lg transition-all"
               onClick={() => setShowContract(prev => !prev)}
             >
-              {showContract ? 'Ocultar código do contrato' : 'Exibir código do contrato'}
+              {showContract ? t('kipuBank.hideContractCode') : t('kipuBank.showContractCode')}
             </button>
             {showContract && (
               <div className="w-full max-w-3xl mb-6 bg-gray-900 text-purple-200 rounded-lg p-4 overflow-auto max-h-96 border-2 border-purple-700">

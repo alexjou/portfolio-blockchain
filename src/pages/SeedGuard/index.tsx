@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DarkCard from '../../components/DarkCard';
 import Footer from "../../components/Footer";
 import { ethers } from 'ethers';
+import { useTranslation } from 'react-i18next';
 
 const contratoAddress = "0x907daae5c9bd87398f2423a7389f5013013b6958";
 const contratoABI = [
@@ -26,10 +27,13 @@ const contratoABI = [
 const contractUrl = `https://sepolia.etherscan.io/address/${contratoAddress}`;
 
 const SeedGuard: React.FC = () => {
+  // Hook de tradução
+  const { t } = useTranslation();
+
   const [walletConnected, setWalletConnected] = useState(false);
-  const [statusMsg, setStatusMsg] = useState('Carteira não conectada');
+  const [statusMsg, setStatusMsg] = useState(t('seedGuard.walletNotConnected'));
   const [message, setMessage] = useState('');
-  const [result, setResult] = useState('Clique em "Ler Minha Mensagem" para ver sua mensagem guardada');
+  const [result, setResult] = useState(t('seedGuard.readMessageDefault'));
   const [resultType, setResultType] = useState<'vazio' | 'sucesso' | 'erro'>('vazio');
   const [loadingConnect, setLoadingConnect] = useState(false);
   const [loadingSave, setLoadingSave] = useState(false);
@@ -46,15 +50,15 @@ const SeedGuard: React.FC = () => {
     try {
       setLoadingConnect(true);
       if (typeof window.ethereum === 'undefined') {
-        setStatusMsg('MetaMask não instalada!');
-        setResult('Instale a extensão MetaMask para usar.');
+        setStatusMsg(t('seedGuard.metamaskNotInstalled'));
+        setResult(t('seedGuard.installMetamask'));
         setResultType('erro');
         setLoadingConnect(false);
         return;
       }
       if (!(window.ethereum as any).isMetaMask) {
-        setStatusMsg('Use a extensão MetaMask oficial.');
-        setResult('Extensão MetaMask não detectada.');
+        setStatusMsg(t('seedGuard.useOfficialMetamask'));
+        setResult(t('seedGuard.extensionNotDetected'));
         setResultType('erro');
         setLoadingConnect(false);
         return;
@@ -62,8 +66,8 @@ const SeedGuard: React.FC = () => {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' }) as string[];
       if (!accounts || accounts.length === 0) {
         <Footer />
-        setStatusMsg('Nenhuma conta selecionada.');
-        setResult('Desbloqueie sua MetaMask e tente novamente.');
+        setStatusMsg(t('seedGuard.noAccountSelected'));
+        setResult(t('seedGuard.unlockMetamask'));
         setResultType('erro');
         setLoadingConnect(false);
         return;
@@ -92,7 +96,7 @@ const SeedGuard: React.FC = () => {
       setSigner(ethersSigner);
       setContrato(contratoInstance);
       setWalletConnected(true);
-      setStatusMsg(`Carteira conectada! Endereço: ${address}`);
+      setStatusMsg(`Conectado: ${address.substring(0, 6)}...${address.substring(address.length - 4)}`);
       setResult('Carteira conectada com sucesso!');
       setResultType('sucesso');
       setLoadingConnect(false);
@@ -265,7 +269,7 @@ const SeedGuard: React.FC = () => {
               {walletConnected ? 'Carteira Conectada ✓' : loadingConnect ? 'Conectando...' : 'Conectar MetaMask'}
             </button>
             <div id="status-conexao" className={statusClass}>
-              {connectMsg}
+              <div className="overflow-hidden text-ellipsis whitespace-normal break-words">{connectMsg}</div>
             </div>
           </div>
 
